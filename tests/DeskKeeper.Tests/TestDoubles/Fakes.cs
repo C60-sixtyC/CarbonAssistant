@@ -34,6 +34,7 @@ public sealed class RecordingPositioner : IDesktopIconPositioner
 {
     public bool? AutoArrange { get; set; }
     public List<(string Path, double X, double Y)> Moved { get; } = new();
+    public List<IconPosition> PositionsToRead { get; set; } = new();
 
     public bool TryMoveIcon(string path, string name, double x, double y, out string? error)
     {
@@ -43,6 +44,12 @@ public sealed class RecordingPositioner : IDesktopIconPositioner
     }
 
     public bool? TryDetectAutoArrange() => AutoArrange;
+
+    public bool TryReadPositions(out IReadOnlyList<IconPosition> positions)
+    {
+        positions = PositionsToRead;
+        return true;
+    }
 }
 
 public sealed class DictionaryRegistryReader : IRegistryReader

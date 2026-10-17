@@ -66,6 +66,7 @@ DeskKeeper.exe --selftest --log .\selftest.json                   # 自检并写
 
 - `%LocalAppData%\DeskKeeper\config.json`：配置（写入前自动备份 .bak，损坏自动回滚）。
 - `snapshot.json` / `rollback.json`：布局快照与回滚点。
+- `layout-undo.json`：每次整理前自动保存的“整理前坐标”，供 `--restore-layout` 还原。
 - `last-clean.json`：撤销映射（原路径 ↔ 归档路径）。
 - `logs\audit.jsonl`：审计日志（只存元数据，不存文件内容）。
 

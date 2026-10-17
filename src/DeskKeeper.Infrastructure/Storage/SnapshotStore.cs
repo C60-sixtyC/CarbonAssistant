@@ -21,6 +21,14 @@ public sealed class Snapshot
     public List<SnapshotItem> Items { get; set; } = new();
 }
 
+public sealed class UndoLayoutItem
+{
+    public string Path { get; set; } = "";
+    public string Name { get; set; } = "";
+    public double X { get; set; }
+    public double Y { get; set; }
+}
+
 /// <summary>
 /// 布局快照：保存前写 .bak；应用布局前写回滚副本（pending 标记），
 /// 崩溃后下次启动检测到 pending 即回滚。
@@ -43,6 +51,7 @@ public sealed class SnapshotStore
 
     public string SnapshotPath => Path.Combine(_baseDir, "snapshot.json");
     public string RollbackPath => Path.Combine(_baseDir, "rollback.json");
+    public string UndoLayoutPath => Path.Combine(_baseDir, "layout-undo.json");
 
     public void Save(Snapshot snapshot)
     {
@@ -82,6 +91,35 @@ public sealed class SnapshotStore
         if (File.Exists(RollbackPath))
         {
             File.Delete(RollbackPath);
+        }
+    }
+
+    public void SaveUndo(IReadOnlyList<UndoLayoutItem> items)
+    {
+        var temp = UndoLayoutPath + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(items, JsonOptions));
+        File.Move(temp, UndoLayoutPath, overwrite: true);
+    }
+
+    public IReadOnlyList<UndoLayoutItem>? LoadUndo()
+    {
+        try
+        {
+            return File.Exists(UndoLayoutPath)
+                ? JsonSerializer.Deserialize<List<UndoLayoutItem>>(File.ReadAllText(UndoLayoutPath), JsonOptions)
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    public void ClearUndo()
+    {
+        if (File.Exists(UndoLayoutPath))
+        {
+            File.Delete(UndoLayoutPath);
         }
     }
 

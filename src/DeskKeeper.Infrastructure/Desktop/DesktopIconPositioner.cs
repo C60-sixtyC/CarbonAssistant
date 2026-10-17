@@ -14,6 +14,7 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
     private const uint LvmGetItemCount = LvmFirst + 4;
     private const uint LvmGetItemTextW = LvmFirst + 115;
     private const uint LvmSetItemPosition = LvmFirst + 15;
+    private const uint LvmGetItemPosition = LvmFirst + 16;
     private const uint LvifText = 0x0001;
 
     public bool TryMoveIcon(string path, string name, double x, double y, out string? error)
@@ -81,6 +82,42 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
         }
 
         return null;
+    }
+
+    public bool TryReadPositions(out IReadOnlyList<IconPosition> positions)
+    {
+        positions = Array.Empty<IconPosition>();
+        try
+        {
+            var listView = FindDesktopListView();
+            if (listView == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            var count = SendMessage(listView, LvmGetItemCount, IntPtr.Zero, IntPtr.Zero).ToInt32();
+            var result = new List<IconPosition>(count);
+            for (var i = 0; i < count; i++)
+            {
+                var name = GetItemText(listView, i);
+                if (name.Length == 0)
+                {
+                    continue;
+                }
+
+                var packed = SendMessage(listView, LvmGetItemPosition, new IntPtr(i), IntPtr.Zero).ToInt64();
+                var x = (short)(packed & 0xFFFF);
+                var y = (short)((packed >> 16) & 0xFFFF);
+                result.Add(new IconPosition(name, x, y));
+            }
+
+            positions = result;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static IntPtr FindDesktopListView()

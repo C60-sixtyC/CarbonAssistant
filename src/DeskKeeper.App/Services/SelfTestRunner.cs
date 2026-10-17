@@ -240,6 +240,12 @@ public static class SelfTestRunner
         }
 
         public bool? TryDetectAutoArrange() => AutoArrange;
+
+        public bool TryReadPositions(out IReadOnlyList<IconPosition> positions)
+        {
+            positions = Array.Empty<IconPosition>();
+            return false;
+        }
     }
 }
 

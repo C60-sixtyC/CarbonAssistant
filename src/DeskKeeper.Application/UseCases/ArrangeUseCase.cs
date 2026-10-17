@@ -199,6 +199,33 @@ public sealed class ArrangeUseCase
         var current = _snapshots.Load().Snapshot;
         _snapshots.SaveRollback(current ?? new Snapshot { SavedAt = _clock.Now });
 
+        // 撤销点：读取并保存当前真实坐标，成功后也保留，供 --restore-layout 使用。
+        if (_positioner.TryReadPositions(out var currentPositions) && currentPositions.Count > 0)
+        {
+            var undo = new List<UndoLayoutItem>();
+            foreach (var pos in currentPositions)
+            {
+                var matched = preview.Items.FirstOrDefault(i =>
+                    string.Equals(pos.Name, i.Name, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(pos.Name, Path.GetFileNameWithoutExtension(i.Name), StringComparison.OrdinalIgnoreCase));
+                if (matched is not null)
+                {
+                    undo.Add(new UndoLayoutItem
+                    {
+                        Path = matched.FullPath,
+                        Name = pos.Name,
+                        X = pos.X,
+                        Y = pos.Y,
+                    });
+                }
+            }
+
+            if (undo.Count > 0)
+            {
+                _snapshots.SaveUndo(undo);
+            }
+        }
+
         var failures = new List<string>();
         var moved = 0;
         var p = _layoutParameters.Get();
@@ -258,6 +285,36 @@ public sealed class ArrangeUseCase
         }
 
         _snapshots.ClearRollback();
+        return new ArrangeResult(moved, 0, failures, false, null);
+    }
+
+    public ArrangeResult RestoreLastLayout(RuleProfile profile)
+    {
+        var undo = _snapshots.LoadUndo();
+        if (undo is null || undo.Count == 0)
+        {
+            return new ArrangeResult(0, 0, Array.Empty<string>(), true, "没有可还原的整理前布局。");
+        }
+
+        var failures = new List<string>();
+        var moved = 0;
+        foreach (var item in undo)
+        {
+            if (_positioner.TryMoveIcon(item.Path, item.Name, item.X, item.Y, out var error))
+            {
+                moved++;
+            }
+            else
+            {
+                failures.Add($"{item.Name}: {error}");
+            }
+        }
+
+        if (failures.Count == 0)
+        {
+            _snapshots.ClearUndo();
+        }
+
         return new ArrangeResult(moved, 0, failures, false, null);
     }
 

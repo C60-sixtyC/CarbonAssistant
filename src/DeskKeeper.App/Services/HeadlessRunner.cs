@@ -77,7 +77,7 @@ public static class HeadlessRunner
     {
         var profile = Load(profileId);
         var (arrange, _) = AppServices.BuildUseCases();
-        var result = arrange.RestoreFromRollback(profile);
+        var result = arrange.RestoreLastLayout(profile);
         return JsonSerializer.Serialize(new
         {
             ok = !result.Aborted && result.Failures.Count == 0,

@@ -1,5 +1,6 @@
 using DeskKeeper.Application.Mapping;
 using DeskKeeper.Application.UseCases;
+using DeskKeeper.Domain.Contracts;
 using DeskKeeper.Domain.Models;
 using DeskKeeper.Infrastructure.Audit;
 using DeskKeeper.Infrastructure.Storage;
@@ -129,6 +130,34 @@ public class ArrangeUseCaseTests : IDisposable
         var result = useCase.RestoreFromRollback(Profile());
         Assert.Equal(1, result.Moved);
         Assert.False(store.HasPendingRollback);
+    }
+
+    [Fact]
+    public void Apply_captures_undo_and_restore_moves_back()
+    {
+        var positioner = new RecordingPositioner { AutoArrange = false };
+        positioner.PositionsToRead = new List<IconPosition>
+        {
+            new("会议.lnk", 120, 80),
+            new("讲义", 200, 100),
+            new("笔记.txt", 300, 120),
+        };
+        var useCase = BuildUseCase(new ListItemSource(ThreeItems()), positioner);
+        var preview = useCase.Preview(Profile());
+        useCase.Apply(preview, Profile());
+
+        var store = new SnapshotStore(_dir);
+        var undo = store.LoadUndo();
+        Assert.NotNull(undo);
+        Assert.Equal(3, undo!.Count);
+
+        var restored = useCase.RestoreLastLayout(Profile());
+        Assert.False(restored.Aborted);
+        Assert.Equal(3, restored.Moved);
+        Assert.Equal(120.0, positioner.Moved[3].X);
+        Assert.Equal(80.0, positioner.Moved[3].Y);
+        Assert.Equal(300.0, positioner.Moved[5].X);
+        Assert.Null(store.LoadUndo());
     }
 }
 

@@ -34,6 +34,7 @@
 %LocalAppData%\DeskKeeper\
   config.json      配置（自动 .bak 备份）
   snapshot.json    图标布局快照
+  layout-undo.json 每次整理前保存的坐标，可还原上次整理
   last-clean.json  上一次清理的撤销映射
   logs\audit.jsonl 审计日志（仅元数据，自动轮转）
 
