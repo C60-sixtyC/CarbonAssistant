@@ -17,12 +17,16 @@
 - 本发布包未做代码签名，Windows SmartScreen 可能提示"未知发布者"。
   正式入校部署前请用学校证书签名，并做信息中心加白。
 
-四、自检
+四、整理布局与选项
+- 默认布局：软件在屏幕左侧，单文件与文件夹在右侧紧邻，文件夹贴到屏幕最右。
+- 设置页开关：「整理时将『此电脑』放在左上角」「将『回收站』放在左上角第二个位置」，默认开启。
+
+五、自检
 在命令行运行：
     DeskKeeper.exe --selftest
 返回码 0 表示桌面整理、归档、撤销链路自检通过（全程在临时目录，不触碰真实桌面）。
 
-五、静默模式（GPO / 计划任务）
+六、静默模式（GPO / 计划任务）
     DeskKeeper.exe --apply   --profile classroom --dry-run
     DeskKeeper.exe --cleanup --profile classroom --dry-run
     DeskKeeper.exe --cleanup --profile classroom
@@ -30,7 +34,7 @@
     DeskKeeper.exe --restore-layout --profile classroom
 建议先用 --dry-run 观察结果，再启用正式执行。
 
-六、数据位置
+七、数据位置
 %LocalAppData%\DeskKeeper\
   config.json      配置（自动 .bak 备份）
   snapshot.json    图标布局快照
@@ -38,12 +42,12 @@
   last-clean.json  上一次清理的撤销映射
   logs\audit.jsonl 审计日志（仅元数据，自动轮转）
 
-七、系统要求
+八、系统要求
 - Windows 10 1809+ / Windows 11，x64
 - 无需安装 .NET 运行时（自包含单文件）
 - 首次启动会释放运行库到临时目录，请勿使用只读临时目录的受限账户
 
-八、常见问题
+九、常见问题
 - 提示"自动排列图标已开启"：右键桌面 → 查看 → 取消勾选"自动排列图标"。
 - 图标没有全部归位：可能是公共桌面项（无权移动）或超出布局容量，界面会提示数量。
 - 想恢复上一次整理：重新执行整理会按快照增量处理；异常退出后可恢复 rollback 快照。

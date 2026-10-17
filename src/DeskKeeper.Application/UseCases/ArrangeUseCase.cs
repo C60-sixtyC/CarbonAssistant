@@ -41,6 +41,9 @@ public sealed record ArrangeResult(
 /// </summary>
 public sealed class ArrangeUseCase
 {
+    private const string ThisPcShellPath = "shell:MyComputerFolder";
+    private const string RecycleBinShellPath = "shell:RecycleBinFolder";
+
     private readonly IDesktopItemSource _source;
     private readonly IDesktopIconPositioner _positioner;
     private readonly ILayoutParametersProvider _layoutParameters;
@@ -122,6 +125,26 @@ public sealed class ArrangeUseCase
             zoneItems.Add(new ZoneItem(item with { IsPinned = pinned }, decision.Zone));
         }
 
+        var specials = new List<DesktopItem>();
+        if (profile.Layout.PinThisPcTopLeft)
+        {
+            specials.Add(MakeSystemIcon("此电脑", ThisPcShellPath));
+        }
+
+        if (profile.Layout.PinRecycleBinTopLeftSecond)
+        {
+            specials.Add(MakeSystemIcon("回收站", RecycleBinShellPath));
+        }
+
+        foreach (var special in specials)
+        {
+            items.Add(new ArrangeItem(special.Name, special.FullPath, Zone.Apps, false, false, null));
+        }
+
+        var reservedSlots = profile.Layout.PinRecycleBinTopLeftSecond
+            ? 2
+            : profile.Layout.PinThisPcTopLeft ? 1 : 0;
+
         if (oneDrive)
         {
             warnings.Add("检测到 OneDrive 桌面托管，相关项已跳过。");
@@ -137,7 +160,8 @@ public sealed class ArrangeUseCase
             profile.Layout.ZoneRatio,
             profile.Layout.MinSlotsPerZone,
             profile.Layout.ReserveTitleRow,
-            _comparer);
+            _comparer,
+            reservedSlotsInFirstZone: reservedSlots);
 
         // 增量 diff：快照中存在且未被用户改动的项保持原位（kept）。
         var snapshotMap = (snapshot?.Items ?? new List<SnapshotItem>())
@@ -155,6 +179,21 @@ public sealed class ArrangeUseCase
                 planned.Add(slot);
             }
         }
+
+        // 系统图标固定在左上角前两个槽位，不属于引擎常规填充。
+        var specialSlots = new List<LayoutSlot>();
+        for (var i = 0; i < specials.Count; i++)
+        {
+            var y = i == 0 ? 0 : p.CellHeight;
+            specialSlots.Add(new LayoutSlot(
+                specials[i].FullPath,
+                specials[i].Name,
+                Zone.Apps,
+                0,
+                ClampPct(y / p.WorkAreaHeight * 100)));
+        }
+
+        planned.InsertRange(0, specialSlots);
 
         if (plan.DegradedToTwoColumns)
         {
@@ -372,5 +411,22 @@ public sealed class ArrangeUseCase
         Zone.Folders => "folders",
         _ => "files",
     };
+
+    private DesktopItem MakeSystemIcon(string name, string path) => new(
+        name,
+        path,
+        DesktopItemKind.SystemIcon,
+        0,
+        _clock.Now,
+        _clock.Now,
+        null,
+        false,
+        false,
+        false,
+        null,
+        false,
+        "system");
+
+    private static double ClampPct(double value) => Math.Clamp(value, 0, 100);
 }
 

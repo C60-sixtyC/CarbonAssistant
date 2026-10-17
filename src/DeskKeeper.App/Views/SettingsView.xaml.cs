@@ -24,6 +24,8 @@ public partial class SettingsView : UserControl
         var profile = App.Config.Profiles[App.Config.ActiveProfile];
         ModeArchive.IsChecked = profile.Cleanup.Mode == "archive";
         ModeRecycle.IsChecked = profile.Cleanup.Mode == "recycle";
+        PinThisPcBox.IsChecked = profile.Layout.PinThisPcTopLeft;
+        PinRecycleBox.IsChecked = profile.Layout.PinRecycleBinTopLeftSecond;
         KeepDaysSlider.Value = profile.Cleanup.KeepDays;
         ArchiveRootBox.Text = profile.Cleanup.ArchiveRoot;
         CapSlider.Value = Math.Clamp(profile.Cleanup.ArchiveCapGB, 1, 20);
@@ -63,6 +65,8 @@ public partial class SettingsView : UserControl
     {
         var profile = App.Config.Profiles[App.Config.ActiveProfile];
         profile.Cleanup.Mode = ModeArchive.IsChecked == true ? "archive" : "recycle";
+        profile.Layout.PinThisPcTopLeft = PinThisPcBox.IsChecked == true;
+        profile.Layout.PinRecycleBinTopLeftSecond = PinRecycleBox.IsChecked == true;
         profile.Cleanup.KeepDays = Math.Clamp((int)KeepDaysSlider.Value, 1, 90);
         profile.Cleanup.ArchiveRoot = ArchiveRootBox.Text.Trim();
         profile.Cleanup.ArchiveCapGB = Math.Clamp(CapSlider.Value, 1, 20);

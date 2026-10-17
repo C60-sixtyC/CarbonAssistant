@@ -16,7 +16,9 @@ public static class ProfileFactory
             Layout: new ProfileLayout(
                 ZoneRatio: dto.Layout.ZoneRatio.ToArray(),
                 MinSlotsPerZone: Math.Max(1, dto.Layout.MinSlotsPerZone),
-                ReserveTitleRow: dto.Layout.ReserveTitleRow),
+                ReserveTitleRow: dto.Layout.ReserveTitleRow,
+                PinThisPcTopLeft: dto.Layout.PinThisPcTopLeft,
+                PinRecycleBinTopLeftSecond: dto.Layout.PinRecycleBinTopLeftSecond),
             Cleanup: new CleanupSettings(
                 Mode: dto.Cleanup.Mode,
                 KeepDays: dto.Cleanup.KeepDays,

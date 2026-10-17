@@ -144,6 +144,14 @@ public static class SelfTestRunner
         var profile = ProfileFactory.ToDomain(
             "classroom",
             ConfigStore.CreateDefaultConfig().Profiles["classroom"]);
+        profile = profile with
+        {
+            Layout = profile.Layout with
+            {
+                PinThisPcTopLeft = false,
+                PinRecycleBinTopLeftSecond = false,
+            },
+        };
         var arrange = new ArrangeUseCase(
             new ListItemSource(items),
             positioner,

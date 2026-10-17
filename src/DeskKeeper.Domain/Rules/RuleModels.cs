@@ -47,7 +47,9 @@ public sealed record RuleProfile(
 public sealed record ProfileLayout(
     double[] ZoneRatio,
     int MinSlotsPerZone,
-    bool ReserveTitleRow = true);
+    bool ReserveTitleRow = true,
+    bool PinThisPcTopLeft = false,
+    bool PinRecycleBinTopLeftSecond = false);
 
 public sealed record CleanupSettings(
     string Mode,

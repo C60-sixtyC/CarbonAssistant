@@ -5,7 +5,9 @@
 
 ## 当前实现（对照迭代路线）
 
-- v0.1 核心：规则引擎 + 三分区布局引擎（比例 2:2.5:5.5，槽位不足自动降级两列）、
+- v0.1 核心：规则引擎 + 三分区布局引擎（比例 2:2.5:5.5，槽位不足自动降级两列）。
+  布局为「软件在左 / 单文件居中 / 文件夹贴右，文件与文件夹紧邻」；
+  支持把「此电脑」固定左上角、把「回收站」固定左上角第二个位置（设置页开关，默认开启）；
   快照增量还原（pinned 固定图标不动）、布局前沙盘预览、自动排列图标检测与拦截。
 - v0.2 核心：桌面扫描清单（临时文件/陈旧文件自动勾选、教学文档默认保护）、
   双层排除（配置规则 + 本次勾选）、Dry-run 空跑、归档优先（同卷直移、跨卷复制+哈希校验）、
@@ -23,7 +25,7 @@ src/DeskKeeper.Domain          纯逻辑：规则引擎、Glob、布局引擎（
 src/DeskKeeper.Infrastructure  Win32/Shell：桌面枚举、图标落位、回收站预检、配置/快照/审计
 src/DeskKeeper.Application     用例编排：Arrange / Clean / Restore
 src/DeskKeeper.App             WPF 三页 UI + 托盘 + 单实例 + 命令行
-tests/DeskKeeper.Tests         xUnit：52 个单元/集成测试（全部跑在临时目录）
+tests/DeskKeeper.Tests         xUnit：54 个单元/集成测试（全部跑在临时目录）
 ```
 
 ## 构建 / 测试 / 发布
@@ -32,7 +34,7 @@ tests/DeskKeeper.Tests         xUnit：52 个单元/集成测试（全部跑在�
 
 ```powershell
 dotnet build DeskKeeper.sln -c Release
-dotnet test DeskKeeper.sln -c Release        # 52 个测试，不触碰真实桌面
+dotnet test DeskKeeper.sln -c Release        # 54 个测试，不触碰真实桌面
 
 # 一键生成可发布包（自包含单文件 + SHA256 + 自检 + zip）
 .\scripts\build-release.ps1 -Version 1.0.0 -Runtime win-x64

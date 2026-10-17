@@ -50,6 +50,8 @@ public sealed class LayoutDto
     public List<double> ZoneRatio { get; set; } = new() { 2, 2.5, 5.5 };
     public int MinSlotsPerZone { get; set; } = 4;
     public bool ReserveTitleRow { get; set; } = true;
+    public bool PinThisPcTopLeft { get; set; } = true;
+    public bool PinRecycleBinTopLeftSecond { get; set; } = true;
 }
 
 public sealed class CleanupDto

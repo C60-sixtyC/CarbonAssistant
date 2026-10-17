@@ -26,9 +26,20 @@ public class ArrangeUseCaseTests : IDisposable
         }
     }
 
-    private static RuleProfile Profile() => ProfileFactory.ToDomain(
-        "classroom",
-        ConfigStore.CreateDefaultConfig().Profiles["classroom"]);
+    private static RuleProfile Profile()
+    {
+        var profile = ProfileFactory.ToDomain(
+            "classroom",
+            ConfigStore.CreateDefaultConfig().Profiles["classroom"]);
+        return profile with
+        {
+            Layout = profile.Layout with
+            {
+                PinThisPcTopLeft = false,
+                PinRecycleBinTopLeftSecond = false,
+            },
+        };
+    }
 
     private static List<DesktopItem> ThreeItems() => new()
     {
@@ -158,6 +169,30 @@ public class ArrangeUseCaseTests : IDisposable
         Assert.Equal(80.0, positioner.Moved[3].Y);
         Assert.Equal(300.0, positioner.Moved[5].X);
         Assert.Null(store.LoadUndo());
+    }
+
+    [Fact]
+    public void System_icons_are_pinned_to_top_left_slots_when_enabled()
+    {
+        var positioner = new RecordingPositioner { AutoArrange = false };
+        var useCase = BuildUseCase(new ListItemSource(ThreeItems()), positioner);
+        var profile = Profile();
+        profile = profile with
+        {
+            Layout = profile.Layout with
+            {
+                PinThisPcTopLeft = true,
+                PinRecycleBinTopLeftSecond = true,
+            },
+        };
+
+        var preview = useCase.Preview(profile);
+        Assert.Equal(5, preview.PlannedSlots.Count);
+        Assert.Equal("此电脑", preview.PlannedSlots[0].Name);
+        Assert.Equal(0, preview.PlannedSlots[0].XPct);
+        Assert.Equal(0, preview.PlannedSlots[0].YPct);
+        Assert.Equal("回收站", preview.PlannedSlots[1].Name);
+        Assert.InRange(preview.PlannedSlots[1].YPct, 8.0, 9.0);
     }
 }
 
