@@ -161,8 +161,8 @@ public sealed class ArrangeUseCase
             zoneItems,
             p.WorkAreaWidth,
             p.WorkAreaHeight,
-            p.CellWidth,
-            p.CellHeight,
+            GetSpacingWidth(p),
+            GetSpacingHeight(p),
             profile.Layout.ZoneRatio,
             profile.Layout.MinSlotsPerZone,
             profile.Layout.ReserveTitleRow,
@@ -450,6 +450,26 @@ public sealed class ArrangeUseCase
         }
 
         return 1.0;
+    }
+
+    private double GetSpacingWidth(LayoutParameters p)
+    {
+        if (_positioner.TryGetSpacing(out var width, out _) && width > 0)
+        {
+            return width;
+        }
+
+        return p.CellWidth;
+    }
+
+    private double GetSpacingHeight(LayoutParameters p)
+    {
+        if (_positioner.TryGetSpacing(out _, out var height) && height > 0)
+        {
+            return height;
+        }
+
+        return p.CellHeight;
     }
 
     private static double ClampPct(double value) => Math.Clamp(value, 0, 100);

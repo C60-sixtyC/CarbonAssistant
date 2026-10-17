@@ -18,5 +18,8 @@ public interface IDesktopIconPositioner
 
     /// <summary>桌面图标窗口与本进程的 DPI 比例（坐标换算系数）；不可用时返回 false。</summary>
     bool TryGetDpiScale(out double scale);
+
+    /// <summary>桌面图标视图的真实网格间距（资源管理器实际使用值）；不可用时返回 false。</summary>
+    bool TryGetSpacing(out double width, out double height);
 }
 

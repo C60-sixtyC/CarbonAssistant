@@ -140,6 +140,10 @@ public partial class App : System.Windows.Application
             {
                 summary = HeadlessRunner.ReadIcons();
             }
+            else if (args.Contains("--display-info", StringComparer.OrdinalIgnoreCase))
+            {
+                summary = HeadlessRunner.DisplayInfo();
+            }
             else
             {
                 return false;

@@ -260,6 +260,13 @@ public static class SelfTestRunner
             scale = 1.0;
             return false;
         }
+
+        public bool TryGetSpacing(out double width, out double height)
+        {
+            width = 0;
+            height = 0;
+            return false;
+        }
     }
 }
 

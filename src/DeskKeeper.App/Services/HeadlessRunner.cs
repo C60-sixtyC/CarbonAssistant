@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Windows.Forms;
 using DeskKeeper.Application.Mapping;
 using DeskKeeper.Domain.Contracts;
 using DeskKeeper.Domain.Rules;
@@ -102,6 +104,49 @@ public static class HeadlessRunner
             items = positions.Select(p => new { p.Name, p.X, p.Y }),
         }, JsonOptions);
     }
+
+    public static string DisplayInfo()
+    {
+        var parameters = new DeskKeeper.Infrastructure.Windows.SystemLayoutParametersProvider().Get();
+        var positioner = new DesktopIconPositioner();
+        positioner.TryGetDpiScale(out var dpiScale);
+        var screens = Screen.AllScreens
+            .Select(s => new
+            {
+                s.DeviceName,
+                X = s.Bounds.X,
+                Y = s.Bounds.Y,
+                Width = s.Bounds.Width,
+                Height = s.Bounds.Height,
+                s.Primary,
+            })
+            .ToArray();
+
+        return JsonSerializer.Serialize(new
+        {
+            workArea = new
+            {
+                parameters.WorkAreaLeft,
+                parameters.WorkAreaTop,
+                parameters.WorkAreaWidth,
+                parameters.WorkAreaHeight,
+                parameters.CellWidth,
+                parameters.CellHeight,
+            },
+            dpiScale,
+            virtualScreen = new
+            {
+                X = GetSystemMetrics(76),
+                Y = GetSystemMetrics(77),
+                Width = GetSystemMetrics(78),
+                Height = GetSystemMetrics(79),
+            },
+            screens,
+        }, JsonOptions);
+    }
+
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int nIndex);
 
     private static RuleProfile Load(string profileId)
     {

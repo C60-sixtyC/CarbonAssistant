@@ -167,6 +167,21 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
         }
     }
 
+    public bool TryGetSpacing(out double width, out double height)
+    {
+        width = 0;
+        height = 0;
+        using var folderView = DesktopFolderView.TryCreate();
+        if (folderView is not null && folderView.TryGetSpacing(out var w, out var h))
+        {
+            width = w;
+            height = h;
+            return true;
+        }
+
+        return false;
+    }
+
     private static IntPtr FindDesktopListView()
     {
         var progman = FindWindow("Progman", null);

@@ -70,6 +70,20 @@ internal sealed class DesktopFolderView : IDisposable
         }
     }
 
+    public bool TryGetSpacing(out int width, out int height)
+    {
+        width = 0;
+        height = 0;
+        if (_view is null || _view.GetSpacing(out var point) != 0)
+        {
+            return false;
+        }
+
+        width = point.X;
+        height = point.Y;
+        return width > 0 && height > 0;
+    }
+
     public void Dispose()
     {
         if (_view is not null && Marshal.IsComObject(_view))
