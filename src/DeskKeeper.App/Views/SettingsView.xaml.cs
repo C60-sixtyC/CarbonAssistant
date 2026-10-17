@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using DeskKeeper.App.Services;
 
 namespace DeskKeeper.App.Views;
 
@@ -72,6 +73,24 @@ public partial class SettingsView : UserControl
         profile.Cleanup.ArchiveCapGB = Math.Clamp(CapSlider.Value, 1, 20);
         App.ConfigStore.Save(App.Config);
         SaveResult.Text = "已保存（写入前自动备份 .bak）。";
+    }
+
+    private void OnUndoArrange(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var profile = AppServices.LoadProfile();
+            var (arrange, _) = AppServices.BuildUseCases();
+            var result = arrange.RestoreLastLayout(profile);
+            SaveResult.Text = result.Aborted
+                ? $"回退失败：{result.AbortReason}"
+                : $"已回退 {result.Moved} 个图标"
+                  + (result.Failures.Count > 0 ? $"，{result.Failures.Count} 个未回退。" : "。");
+        }
+        catch (Exception ex)
+        {
+            SaveResult.Text = $"回退失败：{ex.Message}";
+        }
     }
 
     private static string RuleSummary(DeskKeeper.Infrastructure.Storage.RuleDto rule)

@@ -23,6 +23,8 @@
                 <Slider x:Name="CapSlider" Minimum="1" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True"
                         ValueChanged="OnCapChanged" />
                 <Button Content="保存设置" Style="{StaticResource BigButton}" Margin="0,20,0,0" HorizontalAlignment="Left" Click="OnSave" />
+                <Button x:Name="UndoArrangeButton" Content="回退上次整理" Style="{StaticResource GhostButton}" Height="72" MinWidth="200"
+                        Margin="0,12,0,0" HorizontalAlignment="Left" Click="OnUndoArrange" />
                 <TextBlock x:Name="SaveResult" Style="{StaticResource SecondaryText}" Margin="0,8,0,0" />
             </StackPanel>
         </Border>

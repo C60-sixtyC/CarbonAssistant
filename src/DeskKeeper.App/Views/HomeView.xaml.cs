@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using DeskKeeper.App.Services;
@@ -32,8 +33,17 @@ public partial class HomeView : UserControl
                 StatusText.Text = string.Join(Environment.NewLine, preview.Warnings);
             }
 
+            var zoneSummary = preview.Items
+                .Where(i => !i.Excluded)
+                .GroupBy(i => i.Zone)
+                .OrderBy(g => g.Key)
+                .Select(g => $"{ZoneLabel(g.Key)} {g.Count()} 个")
+                .ToArray();
+            var zoneText = zoneSummary.Length > 0 ? string.Join(" · ", zoneSummary) : "无待整理项";
             var summary =
-                $"沙盘预览：将移动 {preview.PlannedSlots.Count} 个图标，保留 {preview.KeptSlots.Count} 个固定/原位图标。"
+                $"整理前预览：将移动 {preview.PlannedSlots.Count} 个图标，保留 {preview.KeptSlots.Count} 个固定/原位图标。"
+                + $"{Environment.NewLine}{zoneText}。"
+                + $"{Environment.NewLine}本次操作只移动图标位置，不删除、不修改文件，完成后可在设置页回退。"
                 + (preview.Overflow.Count > 0 ? $"{Environment.NewLine}注意：{preview.Overflow.Count} 个图标超出容量，本次不动。" : "")
                 + (preview.AutoArrangeEnabled == true ? $"{Environment.NewLine}警告：系统「自动排列图标」已开启，执行前请先关闭。" : "");
             var confirm = MessageBox.Show(
@@ -60,5 +70,13 @@ public partial class HomeView : UserControl
             StatusText.Text = $"整理失败：{ex.Message}";
         }
     }
+
+    private static string ZoneLabel(DeskKeeper.Domain.Rules.Zone zone) => zone switch
+    {
+        DeskKeeper.Domain.Rules.Zone.Apps => "软件",
+        DeskKeeper.Domain.Rules.Zone.Files => "文件",
+        DeskKeeper.Domain.Rules.Zone.Folders => "文件夹",
+        _ => "其他",
+    };
 }
 
