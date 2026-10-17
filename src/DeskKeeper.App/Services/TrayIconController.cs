@@ -29,7 +29,7 @@ public sealed class TrayIconController : IDisposable
         _icon = new NotifyIcon
         {
             Icon = System.Drawing.SystemIcons.Application,
-            Text = "讲台助手 DeskKeeper",
+            Text = "大屏桌面助手by C60",
             Visible = true,
             ContextMenuStrip = menu,
         };
