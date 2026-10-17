@@ -9,8 +9,8 @@
         <UniformGrid Columns="2">
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="上课 · 整理桌面" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
-                    <TextBlock Text="把应用程序、文件夹、文件自动归入三列，图标各就各位，开讲就是清爽。" Style="{StaticResource BodyText}" Margin="0,0,0,20" />
+                    <TextBlock Text="整理桌面" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
+                    <TextBlock Text="自动将文件归为三列" Style="{StaticResource BodyText}" Margin="0,0,0,20" />
                     <TextBlock Text="整理只会移动图标位置，不删除、不修改任何文件，可随时在设置页回退。"
                                Style="{StaticResource SecondaryText}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,20" />
                     <StackPanel Orientation="Horizontal">
@@ -21,7 +21,7 @@
             </Border>
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="下课 · 一键清理" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
+                    <TextBlock Text="桌面清理" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
                     <TextBlock Text="课后残留课件与临时文件归档或进回收站，帮你收好，不弄丢。" Style="{StaticResource BodyText}" Margin="0,0,0,20" />
                     <Button Content="打开清理清单" Style="{StaticResource BigButton}" HorizontalAlignment="Left" Click="OnClean" />
                 </StackPanel>

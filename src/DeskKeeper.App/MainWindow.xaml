@@ -1,7 +1,7 @@
 <Window x:Class="DeskKeeper.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="讲台助手 DeskKeeper"
+        Title="大屏桌面助手by C60"
         Width="1360" Height="840"
         MinWidth="1024" MinHeight="700"
         WindowStartupLocation="CenterScreen">
@@ -14,10 +14,15 @@
 
         <Border Grid.Row="0" Background="{DynamicResource PrimaryBrush}" Padding="24,14">
             <DockPanel>
-                <TextBlock Text="讲台助手 · DeskKeeper" FontSize="24" FontWeight="Bold"
+                <TextBlock Text="大屏桌面助手by C60" FontSize="24" FontWeight="Bold"
                            Foreground="White" VerticalAlignment="Center" />
                 <TextBlock x:Name="BannerText" DockPanel.Dock="Right" FontSize="18" Foreground="White"
-                           VerticalAlignment="Center" TextAlignment="Right" Text="准备就绪" />
+                           VerticalAlignment="Center" TextAlignment="Right" Text="准备就绪"
+                           RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <ScaleTransform x:Name="BannerScale" ScaleX="1" ScaleY="1" />
+                    </TextBlock.RenderTransform>
+                </TextBlock>
             </DockPanel>
         </Border>
 

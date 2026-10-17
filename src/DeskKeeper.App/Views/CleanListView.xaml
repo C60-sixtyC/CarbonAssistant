@@ -7,8 +7,11 @@
                 <Button Content="全选" Style="{StaticResource GhostButton}" Height="52" MinWidth="120" Margin="0,0,8,0" Click="OnSelectAll" />
                 <Button Content="反选" Style="{StaticResource GhostButton}" Height="52" MinWidth="120" Margin="0,0,8,0" Click="OnInvert" />
                 <Button Content="只选临时文件" Style="{StaticResource GhostButton}" Height="52" MinWidth="160" Margin="0,0,8,0" Click="OnSelectJunk" />
-                <TextBox x:Name="SearchBox" Width="320" Margin="0,0,8,0" TextChanged="OnSearchChanged"
-                         ToolTip="输入文件名关键字过滤" />
+                <Grid Width="320" Margin="0,0,8,0">
+                    <TextBox x:Name="SearchBox" TextChanged="OnSearchChanged" />
+                    <TextBlock x:Name="SearchPlaceholder" Text="出来啦，冇匿啦" Foreground="Gray"
+                               IsHitTestVisible="False" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </Grid>
                 <Button Content="重新扫描" Style="{StaticResource BigButton}" Height="52" MinWidth="140" Click="OnRefresh" />
             </StackPanel>
         </Border>

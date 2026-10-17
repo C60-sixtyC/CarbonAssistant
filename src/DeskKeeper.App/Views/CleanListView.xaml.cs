@@ -40,6 +40,7 @@ public partial class CleanListView : UserControl
     {
         InitializeComponent();
         ItemList.ItemsSource = _rows;
+        SearchPlaceholder.Visibility = Visibility.Visible;
     }
 
     private void OnRefresh(object sender, RoutedEventArgs e) => Refresh();
@@ -133,11 +134,9 @@ public partial class CleanListView : UserControl
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e)
     {
-        var filter = SearchBox.Text.Trim();
-        foreach (var row in _rows)
-        {
-            // 行过滤通过隐藏不可行，这里仅高亮提示；MVP 以状态栏显示命中数。
-        }
+        SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private void OnExecute(object sender, RoutedEventArgs e)

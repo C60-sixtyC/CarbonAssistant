@@ -18,6 +18,24 @@
                 <TextBlock x:Name="DisplayInfoText" Style="{StaticResource SecondaryText}" TextWrapping="Wrap" />
                 <TextBlock Text="主题色" Style="{StaticResource CardTitleText}" Margin="0,16,0,12" />
                 <ComboBox x:Name="AccentBox" SelectionChanged="OnAccentChanged" />
+                <StackPanel Margin="0,12,0,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <Rectangle x:Name="CustomPreview" Width="28" Height="28" RadiusX="6" RadiusY="6" Margin="0,0,10,0" />
+                        <TextBlock Text="自定义颜色" Style="{StaticResource BodyText}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                        <TextBlock Text="R" Width="20" VerticalAlignment="Center" />
+                        <Slider x:Name="RedSlider" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Width="240" ValueChanged="OnCustomColorChanged" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                        <TextBlock Text="G" Width="20" VerticalAlignment="Center" />
+                        <Slider x:Name="GreenSlider" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Width="240" ValueChanged="OnCustomColorChanged" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                        <TextBlock Text="B" Width="20" VerticalAlignment="Center" />
+                        <Slider x:Name="BlueSlider" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Width="240" ValueChanged="OnCustomColorChanged" />
+                    </StackPanel>
+                </StackPanel>
                 <TextBlock x:Name="KeepDaysLabel" Style="{StaticResource BodyText}" Margin="0,12,0,4" />
                 <Slider x:Name="KeepDaysSlider" Minimum="1" Maximum="90" TickFrequency="1" IsSnapToTickEnabled="True"
                         ValueChanged="OnKeepDaysChanged" />
@@ -41,6 +59,8 @@
                 <TextBlock Text="删除操作优先归档或进回收站；配置损坏会自动回滚备份。适配说明：不与希沃/鸿合等厂商管家冲突。"
                            Style="{StaticResource SecondaryText}" />
                 <TextBlock x:Name="AboutVersionText" Style="{StaticResource SecondaryText}" Margin="0,8,0,0" />
+                <TextBlock Style="{StaticResource SecondaryText}" Margin="0,8,0,0" TextWrapping="Wrap"
+                           Text="该项目已在GitHub开源&#10;制作不易，如果做的还不错请给一个star⭐&#10;链接：（仓库地址待补充）" />
             </StackPanel>
         </Border>
     </Grid>

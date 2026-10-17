@@ -13,6 +13,8 @@ namespace DeskKeeper.App.Views;
 public partial class SettingsView : UserControl
 {
     private bool _loading;
+    private bool _updatingAccent;
+    private Color _customColor = Color.FromRgb(0x0F, 0x6C, 0xBD);
 
     public SettingsView()
     {
@@ -59,12 +61,14 @@ public partial class SettingsView : UserControl
     {
         AccentBox.Items.Clear();
         AddAccentItem("自动（跟随壁纸）", null);
-        var selectedIndex = 0;
         foreach (var color in WallpaperAccent.ExtractPalette())
         {
             AddAccentItem(Hex(color), color);
         }
 
+        AddCustomAccentItem();
+
+        var selectedIndex = 0;
         if (!string.IsNullOrWhiteSpace(App.Config.AccentColor))
         {
             var existing = AccentBox.Items.Cast<ComboBoxItem>()
@@ -75,11 +79,12 @@ public partial class SettingsView : UserControl
             }
             else if (App.ParseHex(App.Config.AccentColor) is { } saved)
             {
-                AddAccentItem(Hex(saved), saved);
-                selectedIndex = AccentBox.Items.Count - 1;
+                _customColor = saved;
+                selectedIndex = FindCustomIndex();
             }
         }
 
+        SetCustomSliders(_customColor);
         AccentBox.SelectedIndex = selectedIndex;
     }
 
@@ -99,9 +104,36 @@ public partial class SettingsView : UserControl
         AccentBox.Items.Add(new ComboBoxItem { Content = panel, Tag = color });
     }
 
+    private void AddCustomAccentItem()
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        panel.Children.Add(new Rectangle
+        {
+            Width = 22,
+            Height = 22,
+            Margin = new Thickness(0, 0, 10, 0),
+            Fill = new SolidColorBrush(Colors.Gray),
+        });
+        panel.Children.Add(new TextBlock { Text = "自定义颜色", VerticalAlignment = VerticalAlignment.Center });
+        AccentBox.Items.Add(new ComboBoxItem { Content = panel, Tag = "custom" });
+    }
+
+    private int FindCustomIndex()
+    {
+        for (var i = 0; i < AccentBox.Items.Count; i++)
+        {
+            if (AccentBox.Items[i] is ComboBoxItem { Tag: "custom" })
+            {
+                return i;
+            }
+        }
+
+        return 0;
+    }
+
     private void OnAccentChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_loading || AccentBox.SelectedItem is not ComboBoxItem item)
+        if (_loading || _updatingAccent || AccentBox.SelectedItem is not ComboBoxItem item)
         {
             return;
         }
@@ -110,13 +142,57 @@ public partial class SettingsView : UserControl
         {
             App.SetAccent(selected);
             App.Config.AccentColor = Hex(selected);
+            _customColor = selected;
+            SetCustomSliders(selected);
+        }
+        else if (item.Tag is string tag && tag == "custom")
+        {
+            App.SetAccent(_customColor);
+            App.Config.AccentColor = Hex(_customColor);
         }
         else
         {
             var automatic = WallpaperAccent.Extract();
             App.SetAccent(automatic);
             App.Config.AccentColor = null;
+            SetCustomSliders(automatic ?? _customColor);
         }
+    }
+
+    private void OnCustomColorChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_loading || _updatingAccent)
+        {
+            return;
+        }
+
+        var color = Color.FromRgb(
+            (byte)Math.Clamp((int)RedSlider.Value, 0, 255),
+            (byte)Math.Clamp((int)GreenSlider.Value, 0, 255),
+            (byte)Math.Clamp((int)BlueSlider.Value, 0, 255));
+        _customColor = color;
+        UpdateCustomPreview(color);
+        App.SetAccent(color);
+        App.Config.AccentColor = Hex(color);
+
+        _updatingAccent = true;
+        AccentBox.SelectedIndex = FindCustomIndex();
+        _updatingAccent = false;
+    }
+
+    private void SetCustomSliders(Color color)
+    {
+        _updatingAccent = true;
+        RedSlider.Value = color.R;
+        GreenSlider.Value = color.G;
+        BlueSlider.Value = color.B;
+        UpdateCustomPreview(color);
+        _updatingAccent = false;
+    }
+
+    private void UpdateCustomPreview(Color color)
+    {
+        CustomPreview.Fill = new SolidColorBrush(color);
     }
 
     private static string Hex(Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
