@@ -19,7 +19,9 @@ public partial class SettingsView : UserControl
         InitializeComponent();
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         AboutVersionText.Text = $"版本 {version?.ToString(3) ?? "1.0.0"} · 离线可用 · 单文件发布";
+        App.DisplayInfoChanged += OnDisplayInfoChanged;
         Loaded += (_, _) => LoadFromConfig();
+        Unloaded += (_, _) => App.DisplayInfoChanged -= OnDisplayInfoChanged;
     }
 
     private void LoadFromConfig()
@@ -30,6 +32,7 @@ public partial class SettingsView : UserControl
         ModeRecycle.IsChecked = profile.Cleanup.Mode == "recycle";
         PinThisPcBox.IsChecked = profile.Layout.PinThisPcTopLeft;
         PinRecycleBox.IsChecked = profile.Layout.PinRecycleBinTopLeftSecond;
+        UpdateDisplayInfo();
         LoadAccentOptions();
         KeepDaysSlider.Value = profile.Cleanup.KeepDays;
         ArchiveRootBox.Text = profile.Cleanup.ArchiveRoot;
@@ -43,6 +46,13 @@ public partial class SettingsView : UserControl
         }
 
         _loading = false;
+    }
+
+    private void OnDisplayInfoChanged() => UpdateDisplayInfo();
+
+    private void UpdateDisplayInfo()
+    {
+        DisplayInfoText.Text = App.Display.Summary;
     }
 
     private void LoadAccentOptions()

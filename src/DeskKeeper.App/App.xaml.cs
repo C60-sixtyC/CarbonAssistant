@@ -7,6 +7,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using DeskKeeper.App.Services;
 using DeskKeeper.Infrastructure.Audit;
 using DeskKeeper.Infrastructure.Desktop;
@@ -22,6 +23,8 @@ public partial class App : System.Windows.Application
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeskKeeper");
 
     internal static AppConfigDto Config { get; private set; } = ConfigStore.CreateDefaultConfig();
+    internal static DisplayInfo Display { get; private set; } = Services.DisplayDetector.Detect();
+    internal static event Action? DisplayInfoChanged;
     internal static ConfigStore ConfigStore { get; private set; } = new(DataDir);
     internal static SnapshotStore SnapshotStore { get; private set; } = new(DataDir);
     internal static AuditLogger AuditLogger { get; private set; } = new(Path.Combine(DataDir, "logs"));
@@ -51,6 +54,7 @@ public partial class App : System.Windows.Application
         }
 
         Config = ConfigStore.Load();
+        RefreshDisplayInfo();
         var overrideColor = ParseHex(Config.AccentColor);
         var accent = overrideColor ?? Services.WallpaperAccent.Extract();
         if (accent is { } color)
@@ -60,6 +64,8 @@ public partial class App : System.Windows.Application
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+        SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+        SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
 
     internal static void SetAccent(Color? color)
@@ -67,6 +73,22 @@ public partial class App : System.Windows.Application
         if (color is { } c && Current is App app)
         {
             app.ApplyAccentToResources(c);
+        }
+    }
+
+    private static void RefreshDisplayInfo()
+    {
+        Display = Services.DisplayDetector.Detect();
+        DisplayInfoChanged?.Invoke();
+    }
+
+    private static void OnDisplaySettingsChanged(object? sender, EventArgs e) => RefreshDisplayInfo();
+
+    private static void OnUserPreferenceChanged(object? sender, UserPreferenceChangedEventArgs e)
+    {
+        if (e.Category == UserPreferenceCategory.Desktop && string.IsNullOrWhiteSpace(Config.AccentColor))
+        {
+            SetAccent(Services.WallpaperAccent.Extract());
         }
     }
 

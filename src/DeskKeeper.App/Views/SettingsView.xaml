@@ -14,6 +14,8 @@
                 <TextBlock Text="布局选项" Style="{StaticResource CardTitleText}" Margin="0,16,0,12" />
                 <CheckBox x:Name="PinThisPcBox" Content="整理时将「此电脑」放在左上角" />
                 <CheckBox x:Name="PinRecycleBox" Content="将「回收站」放在左上角第二个位置" />
+                <TextBlock Text="显示适配" Style="{StaticResource CardTitleText}" Margin="0,16,0,12" />
+                <TextBlock x:Name="DisplayInfoText" Style="{StaticResource SecondaryText}" TextWrapping="Wrap" />
                 <TextBlock Text="主题色" Style="{StaticResource CardTitleText}" Margin="0,16,0,12" />
                 <ComboBox x:Name="AccentBox" SelectionChanged="OnAccentChanged" />
                 <TextBlock x:Name="KeepDaysLabel" Style="{StaticResource BodyText}" Margin="0,12,0,4" />
