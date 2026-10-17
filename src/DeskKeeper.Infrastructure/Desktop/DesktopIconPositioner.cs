@@ -140,21 +140,26 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
         }
     }
 
-    public bool TryGetViewArea(out double width, out double height)
+    public bool TryGetDpiScale(out double scale)
     {
-        width = 0;
-        height = 0;
+        scale = 1.0;
         try
         {
             var listView = FindDesktopListView();
-            if (listView == IntPtr.Zero || !GetClientRect(listView, out var rect))
+            if (listView == IntPtr.Zero)
             {
                 return false;
             }
 
-            width = rect.Right - rect.Left;
-            height = rect.Bottom - rect.Top;
-            return width > 0 && height > 0;
+            var target = GetDpiForWindow(listView);
+            var source = GetDpiForSystem();
+            if (target == 0 || source == 0)
+            {
+                return false;
+            }
+
+            scale = Math.Clamp((double)target / source, 0.25, 4.0);
+            return true;
         }
         catch
         {
@@ -272,15 +277,6 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
         public IntPtr lParam;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RECT
-    {
-        public int Left;
-        public int Top;
-        public int Right;
-        public int Bottom;
-    }
-
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
 
@@ -321,7 +317,9 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
     private static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, [MarshalAs(UnmanagedType.Bool)] bool bErase);
 
     [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+    private static extern uint GetDpiForWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForSystem();
 }
 

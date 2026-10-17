@@ -55,7 +55,7 @@ public partial class App : System.Windows.Application
         var accent = overrideColor ?? Services.WallpaperAccent.Extract();
         if (accent is { } color)
         {
-            Resources["PrimaryColor"] = color;
+            ApplyAccentToResources(color);
         }
         var window = new MainWindow();
         MainWindow = window;
@@ -66,8 +66,14 @@ public partial class App : System.Windows.Application
     {
         if (color is { } c && Current is App app)
         {
-            app.Resources["PrimaryColor"] = c;
+            app.ApplyAccentToResources(c);
         }
+    }
+
+    private void ApplyAccentToResources(Color color)
+    {
+        Resources["PrimaryColor"] = color;
+        Resources["PrimaryBrush"] = new SolidColorBrush(color);
     }
 
     internal static Color? ParseHex(string? hex)

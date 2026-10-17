@@ -255,10 +255,9 @@ public static class SelfTestRunner
             return false;
         }
 
-        public bool TryGetViewArea(out double width, out double height)
+        public bool TryGetDpiScale(out double scale)
         {
-            width = 0;
-            height = 0;
+            scale = 1.0;
             return false;
         }
     }

@@ -51,10 +51,9 @@ public sealed class RecordingPositioner : IDesktopIconPositioner
         return true;
     }
 
-    public bool TryGetViewArea(out double width, out double height)
+    public bool TryGetDpiScale(out double scale)
     {
-        width = 0;
-        height = 0;
+        scale = 1.0;
         return false;
     }
 }

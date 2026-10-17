@@ -16,7 +16,7 @@ public interface IDesktopIconPositioner
     /// <summary>读取当前各图标坐标；不可用时返回 false。</summary>
     bool TryReadPositions(out IReadOnlyList<IconPosition> positions);
 
-    /// <summary>桌面图标视图的真实客户区尺寸（落位坐标空间）；不可用时返回 false。</summary>
-    bool TryGetViewArea(out double width, out double height);
+    /// <summary>桌面图标窗口与本进程的 DPI 比例（坐标换算系数）；不可用时返回 false。</summary>
+    bool TryGetDpiScale(out double scale);
 }
 

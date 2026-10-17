@@ -151,11 +151,10 @@ public sealed class ArrangeUseCase
         }
 
         var p = _layoutParameters.Get();
-        if (_positioner.TryGetViewArea(out var viewWidth, out var viewHeight)
-            && (Math.Abs(viewWidth - p.WorkAreaWidth) > 1 || Math.Abs(viewHeight - p.WorkAreaHeight) > 1))
+        var dpiScale = GetDpiScale();
+        if (Math.Abs(dpiScale - 1.0) > 0.01)
         {
-            warnings.Add(
-                $"已检测到显示参数差异（桌面图标视图 {viewWidth:F0}×{viewHeight:F0}），落位时会自动换算坐标。");
+            warnings.Add($"已检测到显示缩放（{dpiScale:P0}），落位坐标已自动换算。");
         }
 
         var plan = LayoutEngine.Compute(
@@ -274,11 +273,12 @@ public sealed class ArrangeUseCase
 
         var failures = new List<string>();
         var moved = 0;
-        var (viewW, viewH) = GetViewArea();
+        var p = _layoutParameters.Get();
+        var scale = GetDpiScale();
         foreach (var slot in preview.PlannedSlots)
         {
-            var x = slot.XPct / 100.0 * viewW;
-            var y = slot.YPct / 100.0 * viewH;
+            var x = (p.WorkAreaLeft + slot.XPct / 100.0 * p.WorkAreaWidth) * scale;
+            var y = (p.WorkAreaTop + slot.YPct / 100.0 * p.WorkAreaHeight) * scale;
             if (_positioner.TryMoveIcon(slot.Path, slot.Name, x, y, out var error))
             {
                 moved++;
@@ -315,11 +315,12 @@ public sealed class ArrangeUseCase
 
         var failures = new List<string>();
         var moved = 0;
-        var (viewW, viewH) = GetViewArea();
+        var p = _layoutParameters.Get();
+        var scale = GetDpiScale();
         foreach (var item in rollback.Items)
         {
-            var x = item.XPct / 100.0 * viewW;
-            var y = item.YPct / 100.0 * viewH;
+            var x = (p.WorkAreaLeft + item.XPct / 100.0 * p.WorkAreaWidth) * scale;
+            var y = (p.WorkAreaTop + item.YPct / 100.0 * p.WorkAreaHeight) * scale;
             if (_positioner.TryMoveIcon(item.Path, item.Name, x, y, out var error))
             {
                 moved++;
@@ -441,15 +442,14 @@ public sealed class ArrangeUseCase
         false,
         "system");
 
-    private (double Width, double Height) GetViewArea()
+    private double GetDpiScale()
     {
-        if (_positioner.TryGetViewArea(out var width, out var height) && width > 0 && height > 0)
+        if (_positioner.TryGetDpiScale(out var scale))
         {
-            return (width, height);
+            return scale;
         }
 
-        var p = _layoutParameters.Get();
-        return (p.WorkAreaWidth, p.WorkAreaHeight);
+        return 1.0;
     }
 
     private static double ClampPct(double value) => Math.Clamp(value, 0, 100);
