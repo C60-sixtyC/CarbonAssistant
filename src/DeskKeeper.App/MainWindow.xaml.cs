@@ -1,8 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
 using DeskKeeper.App.Services;
 using DeskKeeper.App.Views;
 
@@ -15,12 +14,14 @@ public partial class MainWindow : Window
     private readonly SettingsView _settings = new();
     private readonly TrayIconController _tray;
     private readonly Random _random = new();
+    private readonly List<string> _statusQueue = new();
     private static readonly string[] StatusPhrases =
     {
         "数据飞刀已部署",
         "数据从不说谎",
         "有人要倒霉了",
         "他做初一，我做十五",
+        "伏匿匿结束啦",
     };
 
     public MainWindow()
@@ -42,21 +43,19 @@ public partial class MainWindow : Window
 
     private void ShowRandomStatus()
     {
-        BannerText.Text = StatusPhrases[_random.Next(StatusPhrases.Length)];
-
-        var bounce = new DoubleAnimationUsingKeyFrames();
-        bounce.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        bounce.KeyFrames.Add(new EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(120)))
+        if (_statusQueue.Count == 0)
         {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-        });
-        bounce.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(360)))
-        {
-            EasingFunction = new ElasticEase { Oscillations = 2, Springiness = 3 },
-        });
+            _statusQueue.AddRange(StatusPhrases);
+            for (var i = _statusQueue.Count - 1; i > 0; i--)
+            {
+                var j = _random.Next(i + 1);
+                (_statusQueue[i], _statusQueue[j]) = (_statusQueue[j], _statusQueue[i]);
+            }
+        }
 
-        BannerText.RenderTransform.BeginAnimation(ScaleTransform.ScaleXProperty, bounce);
-        BannerText.RenderTransform.BeginAnimation(ScaleTransform.ScaleYProperty, bounce);
+        var text = _statusQueue[0];
+        _statusQueue.RemoveAt(0);
+        BannerText.Text = text;
     }
 
     private void OnNavHome(object sender, RoutedEventArgs e) => Navigate(0);

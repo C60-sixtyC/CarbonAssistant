@@ -17,12 +17,7 @@
                 <TextBlock Text="大屏桌面助手by C60" FontSize="24" FontWeight="Bold"
                            Foreground="White" VerticalAlignment="Center" />
                 <TextBlock x:Name="BannerText" DockPanel.Dock="Right" FontSize="18" Foreground="White"
-                           VerticalAlignment="Center" TextAlignment="Right" Text="准备就绪"
-                           RenderTransformOrigin="0.5,0.5">
-                    <TextBlock.RenderTransform>
-                        <ScaleTransform x:Name="BannerScale" ScaleX="1" ScaleY="1" />
-                    </TextBlock.RenderTransform>
-                </TextBlock>
+                           VerticalAlignment="Center" TextAlignment="Right" Text="准备就绪" />
             </DockPanel>
         </Border>
 
