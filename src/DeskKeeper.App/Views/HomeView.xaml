@@ -9,7 +9,7 @@
         <UniformGrid Columns="2">
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text=" 整理桌面" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
+                    <TextBlock Text="整理桌面" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
                     <TextBlock Text="把应用程序、文件夹、文件自动归入三列，图标各就各位。" Style="{StaticResource BodyText}" Margin="0,0,0,20" />
                     <TextBlock Text="整理只会移动图标位置，不删除、不修改任何文件，可随时在设置页回退。"
                                Style="{StaticResource SecondaryText}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,20" />

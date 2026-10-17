@@ -28,7 +28,7 @@ public sealed class TrayIconController : IDisposable
 
         _icon = new NotifyIcon
         {
-            Icon = System.Drawing.SystemIcons.Application,
+            Icon = LoadTrayIcon(),
             Text = "大屏桌面助手by C60",
             Visible = true,
             ContextMenuStrip = menu,
@@ -55,6 +55,28 @@ public sealed class TrayIconController : IDisposable
     {
         _icon.Visible = false;
         _icon.Dispose();
+    }
+
+    private static System.Drawing.Icon LoadTrayIcon()
+    {
+        try
+        {
+            var path = Environment.ProcessPath;
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
+                if (icon is not null)
+                {
+                    return icon;
+                }
+            }
+        }
+        catch
+        {
+            // 读取失败时退回系统默认图标。
+        }
+
+        return System.Drawing.SystemIcons.Application;
     }
 }
 

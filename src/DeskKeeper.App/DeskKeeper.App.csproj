@@ -8,6 +8,7 @@
     <RootNamespace>DeskKeeper.App</RootNamespace>
     <AssemblyName>DeskKeeper</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\tray.ico</ApplicationIcon>
     <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
     <Version>1.0.0</Version>
