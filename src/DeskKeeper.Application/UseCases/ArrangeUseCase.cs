@@ -216,8 +216,16 @@ public sealed class ArrangeUseCase
             }
         }
 
-        PersistSnapshot(preview);
-        _snapshots.ClearRollback();
+        if (failures.Count == 0)
+        {
+            PersistSnapshot(preview);
+            _snapshots.ClearRollback();
+        }
+        else
+        {
+            // 部分失败时保留回滚快照，供 --restore-layout 一键还原。
+            _snapshots.SaveRollback(current ?? new Snapshot { SavedAt = _clock.Now });
+        }
 
         var auditFailures = failures.Select(f => new AuditFailure(f, "位置写入失败")).ToList();
         Audit(profile, "arrange", dryRun: false, moved, auditFailures, null);

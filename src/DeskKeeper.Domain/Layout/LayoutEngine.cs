@@ -64,26 +64,30 @@ public static class LayoutEngine
         var rows = Math.Max(1, (int)Math.Floor(workAreaHeight / Math.Max(1, cellHeight)));
         var fillRows = reserveTitleRow ? Math.Max(1, rows - 1) : rows;
 
-        // 分区定义：默认三区（应用 / 文件夹 / 文件）。
-        var zones = new[]
+        // 分区定义：屏幕从左到右为 软件 | 单文件 | 文件夹。
+        var ratioApps = ratios.Length > 0 ? ratios[0] : 1.0;
+        var ratioFiles = ratios.Length > 2 ? ratios[2] : 0.0;
+        var ratioFolders = ratios.Length > 1 ? ratios[1] : 0.0;
+
+        var zones = new List<(Zone Name, double Ratio, Zone[] Absorbs)>
         {
-            (Name: Zone.Apps, Ratio: ratios.Length > 0 ? ratios[0] : 1.0),
-            (Name: Zone.Folders, Ratio: ratios.Length > 1 ? ratios[1] : 0.0),
-            (Name: Zone.Files, Ratio: ratios.Length > 2 ? ratios[2] : 0.0),
-        }.Where(z => z.Ratio > 0).ToArray();
+            (Zone.Apps, ratioApps, new[] { Zone.Apps }),
+            (Zone.Files, ratioFiles, new[] { Zone.Files }),
+            (Zone.Folders, ratioFolders, new[] { Zone.Folders }),
+        }.Where(z => z.Ratio > 0).ToList();
 
         var degraded = false;
-        if (zones.Length == 3)
+        if (zones.Count == 3)
         {
             var trial = DistributeColumns(cols, zones.Select(z => z.Ratio).ToArray());
             var ok = trial.All(c => c > 0 && c * fillRows >= minSlotsPerZone);
             if (!ok)
             {
-                // 降级为两列：应用与文件夹合并。
-                zones = new[]
+                // 降级为两列：软件与单文件合并，文件夹保持最右。
+                zones = new List<(Zone, double, Zone[])>
                 {
-                    (Name: Zone.Apps, Ratio: ratios[0] + ratios[1]),
-                    (Name: Zone.Files, Ratio: ratios[2]),
+                    (Zone.Apps, ratioApps + ratioFiles, new[] { Zone.Apps, Zone.Files }),
+                    (Zone.Folders, ratioFolders, new[] { Zone.Folders }),
                 };
                 degraded = true;
             }
@@ -96,14 +100,15 @@ public static class LayoutEngine
         var overflow = new List<LayoutSlot>();
         var startX = 0.0;
 
-        for (var zi = 0; zi < zones.Length; zi++)
+        for (var zi = 0; zi < zones.Count; zi++)
         {
             var zone = zones[zi].Name;
+            var absorbed = zones[zi].Absorbs;
             var zoneColCount = Math.Max(0, zoneColumns[zi]);
             zoneColumnMap[zone] = zoneColCount;
 
             var zoneItems = list
-                .Where(x => x.Zone == zone || (degraded && zone == Zone.Apps && x.Zone == Zone.Folders))
+                .Where(x => absorbed.Contains(x.Zone))
                 .OrderBy(x => x.Item.Name, comparer)
                 .ToList();
 

@@ -135,10 +135,8 @@ public sealed class CleanUseCase
                 decision.ConfirmRequired));
         }
 
-        var ordered = items
-            .OrderByDescending(i => i.Checked)
-            .ThenBy(i => i.ModifiedTime)
-            .ToList();
+        // 清理清单默认按最后修改时间升序（最旧的在前，优先暴露候选）。
+        var ordered = items.OrderBy(i => i.ModifiedTime).ToList();
         var hash = ComputeManifestHash(ordered);
         return new CleanManifest(profile.Id, settings.Mode, ordered, excluded, oneDriveBlocked, hash);
     }

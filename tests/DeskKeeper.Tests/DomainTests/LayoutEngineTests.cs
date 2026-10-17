@@ -42,7 +42,7 @@ public class LayoutEngineTests
         Assert.InRange(apps[1].YPct, 9.0, 9.5);
 
         var files = plan.Slots.Single(s => s.Zone == Zone.Files);
-        Assert.InRange(files.XPct, 46, 48); // (4+5)*100/1920 ≈ 46.9%
+        Assert.InRange(files.XPct, 20, 21); // 软件 4 列后进入文件区：(4*100)/1920 ≈ 20.8%
     }
 
     [Fact]
@@ -72,9 +72,10 @@ public class LayoutEngineTests
 
         var plan = LayoutEngine.Compute(items, 320, 200, 100, 100, new[] { 2.0, 2.5, 5.5 }, 4, false);
         Assert.True(plan.DegradedToTwoColumns);
-        Assert.Equal(1, plan.ZoneColumns[Zone.Apps]);
-        Assert.Equal(2, plan.ZoneColumns[Zone.Files]);
-        Assert.Equal(2, plan.Slots.Count(s => s.Zone is Zone.Apps or Zone.Folders));
+        Assert.Equal(2, plan.ZoneColumns[Zone.Apps]);
+        Assert.Equal(1, plan.ZoneColumns[Zone.Folders]);
+        Assert.Equal(2, plan.Slots.Count(s => s.Zone is Zone.Apps or Zone.Files));
+        Assert.Equal(1, plan.Slots.Count(s => s.Zone == Zone.Folders));
     }
 
     [Fact]

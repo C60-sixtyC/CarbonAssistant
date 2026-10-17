@@ -20,6 +20,7 @@ public partial class CleanListView : UserControl
         public required string KindLabel { get; init; }
         public required string SizeLabel { get; init; }
         public required string ModifiedLabel { get; init; }
+        public required DateTimeOffset ModifiedTime { get; init; }
         public required string Reason { get; init; }
         public required string DisposalLabel { get; init; }
 
@@ -33,6 +34,7 @@ public partial class CleanListView : UserControl
     private readonly ObservableCollection<Row> _rows = new();
     private CleanManifest? _manifest;
     private RuleProfile? _profile;
+    private bool _sortDescending;
 
     public CleanListView()
     {
@@ -63,12 +65,14 @@ public partial class CleanListView : UserControl
                     KindLabel = item.Kind.ToString(),
                     SizeLabel = FormatSize(item.SizeBytes),
                     ModifiedLabel = item.ModifiedTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
+                    ModifiedTime = item.ModifiedTime,
                     Reason = item.Locked ? "文件占用中，跳过" : item.Reason,
                     DisposalLabel = item.Disposal == Disposal.Recycle ? "回收站" : "归档",
                     Checked = item.Checked && !item.Locked,
                 });
             }
 
+            SortRows();
             SummaryText.Text = $"{manifest.CheckedCount} 项候选，共 {FormatSize(manifest.CheckedBytes)}；"
                 + $"回收站占用 {FormatSize(preCheck.RecycleUsedBytes)}，可用 {FormatSize(preCheck.RecycleAvailableBytes)}。"
                 + (preCheck.Warnings.Count > 0 ? " " + string.Join(" ", preCheck.Warnings) : "");
@@ -86,6 +90,28 @@ public partial class CleanListView : UserControl
     private void OnSelectAll(object sender, RoutedEventArgs e) => SetAll(_ => true);
     private void OnInvert(object sender, RoutedEventArgs e) => SetAll(row => !row.Checked);
     private void OnSelectJunk(object sender, RoutedEventArgs e) => SetAll(row => row.Reason.Contains("临时文件"));
+
+    private void OnHeaderClick(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is System.Windows.Controls.GridViewColumnHeader header
+            && header.Content?.ToString() == "最后修改")
+        {
+            _sortDescending = !_sortDescending;
+            SortRows();
+        }
+    }
+
+    private void SortRows()
+    {
+        var ordered = _sortDescending
+            ? _rows.OrderByDescending(r => r.ModifiedTime).ToList()
+            : _rows.OrderBy(r => r.ModifiedTime).ToList();
+        _rows.Clear();
+        foreach (var row in ordered)
+        {
+            _rows.Add(row);
+        }
+    }
 
     private void SetAll(Func<Row, bool> predicate)
     {

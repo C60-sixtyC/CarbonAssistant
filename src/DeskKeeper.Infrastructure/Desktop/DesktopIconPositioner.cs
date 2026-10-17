@@ -32,13 +32,24 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
             for (var i = 0; i < count; i++)
             {
                 var text = GetItemText(listView, i);
-                if (!string.Equals(text, name, StringComparison.OrdinalIgnoreCase))
+                // 桌面标签对快捷方式与“隐藏已知扩展名”的文件不显示扩展名，
+                // 因此同时比较完整文件名与去扩展名后的名字。
+                var bareName = Path.GetFileNameWithoutExtension(name);
+                if (!string.Equals(text, name, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(text, bareName, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
                 var lParam = MakeLParam((int)x, (int)y);
-                SendMessage(listView, LvmSetItemPosition, new IntPtr(i), lParam);
+                var applied = SendMessage(listView, LvmSetItemPosition, new IntPtr(i), lParam).ToInt32();
+                if (applied == 0)
+                {
+                    error = "系统拒绝移动该图标";
+                    return false;
+                }
+
+                InvalidateRect(listView, IntPtr.Zero, true);
                 return true;
             }
 
@@ -98,51 +109,70 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
     private static string GetItemText(IntPtr listView, int index)
     {
         GetWindowThreadProcessId(listView, out var processId);
-        var remote = OpenProcess(0x0010 /*PROCESS_VM_READ*/ | 0x0008 /*PROCESS_VM_OPERATION*/ | 0x0400 /*QUERY_INFORMATION*/, false, processId);
+        const uint processVmRead = 0x0010;
+        const uint processVmWrite = 0x0020;
+        const uint processVmOperation = 0x0008;
+        const uint processQueryInformation = 0x0400;
+        var remote = OpenProcess(
+            processVmRead | processVmWrite | processVmOperation | processQueryInformation,
+            false,
+            processId);
         if (remote == IntPtr.Zero)
         {
             return string.Empty;
         }
 
+        const uint memCommit = 0x1000;
+        const uint pageReadWrite = 0x04;
+        const uint memRelease = 0x8000;
+        const int charCapacity = 512;
+        var textBuffer = IntPtr.Zero;
+        var itemBuffer = IntPtr.Zero;
+
         try
         {
-            var buffer = VirtualAllocEx(remote, IntPtr.Zero, 1024, 0x1000 /*COMMIT*/, 0x04 /*READWRITE*/);
-            if (buffer == IntPtr.Zero)
+            textBuffer = VirtualAllocEx(remote, IntPtr.Zero, (uint)(charCapacity * 2), memCommit, pageReadWrite);
+            var itemSize = Marshal.SizeOf<LVITEM>();
+            itemBuffer = VirtualAllocEx(remote, IntPtr.Zero, (uint)itemSize, memCommit, pageReadWrite);
+            if (textBuffer == IntPtr.Zero || itemBuffer == IntPtr.Zero)
             {
                 return string.Empty;
             }
 
-            try
+            var item = new LVITEM
             {
-                var item = new LVITEM
-                {
-                    mask = LvifText,
-                    iItem = index,
-                    iSubItem = 0,
-                    pszText = buffer,
-                    cchTextMax = 512,
-                };
-                var local = Marshal.AllocHGlobal(Marshal.SizeOf(item));
-                try
-                {
-                    Marshal.StructureToPtr(item, local, false);
-                    SendMessage(listView, LvmGetItemTextW, new IntPtr(index), local);
-                    var bytes = new byte[1024];
-                    ReadProcessMemory(remote, buffer, bytes, bytes.Length, out _);
-                    return Encoding.Unicode.GetString(bytes).Split('\0')[0];
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(local);
-                }
-            }
-            finally
+                mask = LvifText,
+                iItem = index,
+                iSubItem = 0,
+                pszText = textBuffer,
+                cchTextMax = charCapacity,
+            };
+            if (!WriteProcessMemory(remote, itemBuffer, ref item, itemSize, out _))
             {
-                VirtualFreeEx(remote, buffer, 0, 0x8000 /*MEM_RELEASE*/);
+                return string.Empty;
             }
+
+            SendMessage(listView, LvmGetItemTextW, new IntPtr(index), itemBuffer);
+            var bytes = new byte[charCapacity * 2];
+            if (!ReadProcessMemory(remote, textBuffer, bytes, bytes.Length, out _))
+            {
+                return string.Empty;
+            }
+
+            return Encoding.Unicode.GetString(bytes).Split('\0')[0];
         }
         finally
         {
+            if (textBuffer != IntPtr.Zero)
+            {
+                VirtualFreeEx(remote, textBuffer, 0, memRelease);
+            }
+
+            if (itemBuffer != IntPtr.Zero)
+            {
+                VirtualFreeEx(remote, itemBuffer, 0, memRelease);
+            }
+
             CloseHandle(remote);
         }
     }
@@ -188,6 +218,18 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
     private static extern bool ReadProcessMemory(IntPtr process, IntPtr address, byte[] buffer, int size, out int read);
 
     [DllImport("kernel32.dll")]
+    private static extern bool WriteProcessMemory(
+        IntPtr process,
+        IntPtr address,
+        ref LVITEM buffer,
+        int size,
+        out int written);
+
+    [DllImport("kernel32.dll")]
     private static extern bool CloseHandle(IntPtr handle);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, [MarshalAs(UnmanagedType.Bool)] bool bErase);
 }
 

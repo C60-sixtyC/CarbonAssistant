@@ -32,6 +32,12 @@
                   HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListView.View>
                 <GridView>
+                    <GridView.ColumnHeaderContainerStyle>
+                        <Style TargetType="GridViewColumnHeader">
+                            <Setter Property="Cursor" Value="Hand" />
+                            <EventSetter Event="Click" Handler="OnHeaderClick" />
+                        </Style>
+                    </GridView.ColumnHeaderContainerStyle>
                     <GridViewColumn Header="" Width="64">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

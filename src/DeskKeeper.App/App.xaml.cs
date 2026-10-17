@@ -94,6 +94,10 @@ public partial class App : System.Windows.Application
             {
                 summary = HeadlessRunner.Restore(profileId);
             }
+            else if (args.Contains("--restore-layout", StringComparer.OrdinalIgnoreCase))
+            {
+                summary = HeadlessRunner.RestoreLayout(profileId);
+            }
             else
             {
                 return false;

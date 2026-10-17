@@ -58,6 +58,7 @@ DeskKeeper.exe --apply   --profile classroom --dry-run            # 整理（空
 DeskKeeper.exe --apply   --profile classroom                      # 整理（执行）
 DeskKeeper.exe --cleanup --profile classroom --dry-run            # 清理（空跑）
 DeskKeeper.exe --restore --profile classroom                      # 撤销上次清理
+DeskKeeper.exe --restore-layout --profile classroom               # 还原上次整理布局
 DeskKeeper.exe --selftest --log .\selftest.json                   # 自检并写结果文件
 ```
 

@@ -73,6 +73,21 @@ public static class HeadlessRunner
         }, JsonOptions);
     }
 
+    public static string RestoreLayout(string profileId)
+    {
+        var profile = Load(profileId);
+        var (arrange, _) = AppServices.BuildUseCases();
+        var result = arrange.RestoreFromRollback(profile);
+        return JsonSerializer.Serialize(new
+        {
+            ok = !result.Aborted && result.Failures.Count == 0,
+            action = "restore-layout",
+            result.Moved,
+            result.Failures,
+            result.AbortReason,
+        }, JsonOptions);
+    }
+
     private static RuleProfile Load(string profileId)
     {
         var config = App.ConfigStore.Load();

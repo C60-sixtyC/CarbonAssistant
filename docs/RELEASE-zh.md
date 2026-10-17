@@ -27,6 +27,7 @@
     DeskKeeper.exe --cleanup --profile classroom --dry-run
     DeskKeeper.exe --cleanup --profile classroom
     DeskKeeper.exe --restore --profile classroom
+    DeskKeeper.exe --restore-layout --profile classroom
 建议先用 --dry-run 观察结果，再启用正式执行。
 
 六、数据位置
