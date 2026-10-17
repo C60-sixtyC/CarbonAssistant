@@ -51,18 +51,39 @@ public partial class App : System.Windows.Application
         }
 
         Config = ConfigStore.Load();
-        ApplyWallpaperAccent();
+        var overrideColor = ParseHex(Config.AccentColor);
+        var accent = overrideColor ?? Services.WallpaperAccent.Extract();
+        if (accent is { } color)
+        {
+            Resources["PrimaryColor"] = color;
+        }
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
     }
 
-    private void ApplyWallpaperAccent()
+    internal static void SetAccent(Color? color)
     {
-        var accent = Services.WallpaperAccent.Extract();
-        if (accent is { } color)
+        if (color is { } c && Current is App app)
         {
-            Resources["PrimaryColor"] = color;
+            app.Resources["PrimaryColor"] = c;
+        }
+    }
+
+    internal static Color? ParseHex(string? hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+        {
+            return null;
+        }
+
+        try
+        {
+            return (Color)ColorConverter.ConvertFromString(hex);
+        }
+        catch
+        {
+            return null;
         }
     }
 

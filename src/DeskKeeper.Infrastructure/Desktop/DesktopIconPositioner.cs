@@ -79,8 +79,8 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
                 @"Software\Microsoft\Windows\Shell\Bags\1\Desktop");
             if (key?.GetValue("FFlags") is int flags)
             {
-                // 不同系统版本上自动排列对应不同位，两者都探测以保稳妥。
-                return (flags & 0x00000001) != 0 || (flags & 0x80000000) != 0;
+                // 0x1000 为桌面「自动排列图标」，0x1 为兼容旧版本的备用位。
+                return (flags & 0x00001000) != 0 || (flags & 0x00000001) != 0;
             }
         }
         catch
@@ -126,6 +126,12 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
             }
 
             positions = result;
+            if (result.Count > 1 && result.All(p => p.X == 0 && p.Y == 0))
+            {
+                positions = Array.Empty<IconPosition>();
+                return false;
+            }
+
             return true;
         }
         catch

@@ -34,7 +34,7 @@ public partial class CleanListView : UserControl
     private readonly ObservableCollection<Row> _rows = new();
     private CleanManifest? _manifest;
     private RuleProfile? _profile;
-    private bool _sortDescending;
+    private bool _sortDescending = true;
 
     public CleanListView()
     {
@@ -73,6 +73,7 @@ public partial class CleanListView : UserControl
             }
 
             SortRows();
+            UpdateSortHeader();
             SummaryText.Text = $"{manifest.CheckedCount} 项候选，共 {FormatSize(manifest.CheckedBytes)}；"
                 + $"回收站占用 {FormatSize(preCheck.RecycleUsedBytes)}，可用 {FormatSize(preCheck.RecycleAvailableBytes)}。"
                 + (preCheck.Warnings.Count > 0 ? " " + string.Join(" ", preCheck.Warnings) : "");
@@ -94,10 +95,19 @@ public partial class CleanListView : UserControl
     private void OnHeaderClick(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is System.Windows.Controls.GridViewColumnHeader header
-            && header.Content?.ToString() == "最后修改")
+            && header.Content?.ToString()?.StartsWith("最后修改") == true)
         {
             _sortDescending = !_sortDescending;
             SortRows();
+            UpdateSortHeader();
+        }
+    }
+
+    private void UpdateSortHeader()
+    {
+        if (ItemList.View is GridView gridView && gridView.Columns.Count > 4)
+        {
+            gridView.Columns[4].Header = _sortDescending ? "最后修改 ↓（新的在前）" : "最后修改 ↑（旧的在前）";
         }
     }
 

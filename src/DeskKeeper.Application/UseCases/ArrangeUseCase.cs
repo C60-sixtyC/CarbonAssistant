@@ -335,6 +335,13 @@ public sealed class ArrangeUseCase
             return new ArrangeResult(0, 0, Array.Empty<string>(), true, "没有可还原的整理前布局。");
         }
 
+        if (undo.Count > 1 && undo.All(i => i.X == 0 && i.Y == 0))
+        {
+            _snapshots.ClearUndo();
+            return new ArrangeResult(0, 0, Array.Empty<string>(), true,
+                "撤销点无效（坐标为全零），已阻止还原以避免打乱桌面。");
+        }
+
         var failures = new List<string>();
         var moved = 0;
         foreach (var item in undo)

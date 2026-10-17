@@ -4,6 +4,7 @@ public sealed class AppConfigDto
 {
     public int SchemaVersion { get; set; } = 1;
     public string ActiveProfile { get; set; } = "classroom";
+    public string? AccentColor { get; set; }
     public Dictionary<string, ProfileDto> Profiles { get; set; } = new();
 }
 

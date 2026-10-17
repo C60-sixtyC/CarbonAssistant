@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using Microsoft.Win32;
 using WpfColor = System.Windows.Media.Color;
 
@@ -12,7 +13,9 @@ namespace DeskKeeper.App.Services;
 /// </summary>
 public static class WallpaperAccent
 {
-    public static WpfColor? Extract()
+    public static WpfColor? Extract() => ExtractPalette().FirstOrDefault();
+
+    public static IReadOnlyList<WpfColor> ExtractPalette()
     {
         try
         {
@@ -20,7 +23,7 @@ public static class WallpaperAccent
                 ?.GetValue("WallPaper") as string;
             if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             {
-                return null;
+                return Array.Empty<WpfColor>();
             }
 
             using var bitmap = new Bitmap(path);
@@ -28,11 +31,11 @@ public static class WallpaperAccent
         }
         catch
         {
-            return null;
+            return Array.Empty<WpfColor>();
         }
     }
 
-    private static WpfColor? Analyze(Bitmap bitmap)
+    private static IReadOnlyList<WpfColor> Analyze(Bitmap bitmap)
     {
         const int grid = 12;
         var buckets = new Dictionary<int, Bucket>();
@@ -63,7 +66,7 @@ public static class WallpaperAccent
             }
         }
 
-        Bucket? best = null;
+        var candidates = new List<(Bucket Bucket, double Lum)>();
         foreach (var bucket in buckets.Values)
         {
             var r = bucket.R / bucket.Count;
@@ -77,42 +80,65 @@ public static class WallpaperAccent
                 continue; // 跳过近黑/近白/近灰
             }
 
-            if (best is null || bucket.Count > best.Count)
+            if (lum >= 0.08 && lum <= 0.92 && max - min >= 10)
             {
-                best = bucket;
+                candidates.Add((bucket, lum));
             }
         }
 
-        if (best is null)
+        var accents = new List<WpfColor>();
+        foreach (var (bucket, lum) in candidates.OrderByDescending(c => c.Bucket.Count))
         {
-            return null;
+            var color = ToAccent(bucket, lum);
+            if (accents.Any(existing => Distance(existing, color) < 42))
+            {
+                continue;
+            }
+
+            accents.Add(color);
+            if (accents.Count >= 5)
+            {
+                break;
+            }
         }
 
-        var accentR = best.R / best.Count;
-        var accentG = best.G / best.Count;
-        var accentB = best.B / best.Count;
-        var accentLum = (0.299 * accentR + 0.587 * accentG + 0.114 * accentB) / 255.0;
+        return accents;
+    }
+
+    private static WpfColor ToAccent(Bucket bucket, double lum)
+    {
+        var r = bucket.R / bucket.Count;
+        var g = bucket.G / bucket.Count;
+        var b = bucket.B / bucket.Count;
 
         // 强调色需要与白色前景字有足够对比：过亮则压暗，过暗则适度提亮。
-        if (accentLum > 0.55)
+        if (lum > 0.55)
         {
-            var factor = 0.42 / accentLum;
-            accentR *= factor;
-            accentG *= factor;
-            accentB *= factor;
+            var factor = 0.42 / lum;
+            r *= factor;
+            g *= factor;
+            b *= factor;
         }
-        else if (accentLum < 0.16)
+        else if (lum < 0.16)
         {
-            var factor = 0.22 / accentLum;
-            accentR = 255 - (255 - accentR) * factor;
-            accentG = 255 - (255 - accentG) * factor;
-            accentB = 255 - (255 - accentB) * factor;
+            var factor = 0.22 / lum;
+            r = 255 - (255 - r) * factor;
+            g = 255 - (255 - g) * factor;
+            b = 255 - (255 - b) * factor;
         }
 
         return WpfColor.FromRgb(
-            (byte)Math.Clamp(accentR, 0, 255),
-            (byte)Math.Clamp(accentG, 0, 255),
-            (byte)Math.Clamp(accentB, 0, 255));
+            (byte)Math.Clamp(r, 0, 255),
+            (byte)Math.Clamp(g, 0, 255),
+            (byte)Math.Clamp(b, 0, 255));
+    }
+
+    private static double Distance(WpfColor a, WpfColor b)
+    {
+        var dr = a.R - b.R;
+        var dg = a.G - b.G;
+        var db = a.B - b.B;
+        return Math.Sqrt(dr * dr + dg * dg + db * db);
     }
 
     private sealed class Bucket

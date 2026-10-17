@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
 using DeskKeeper.App.Services;
 
 namespace DeskKeeper.App.Views;
@@ -27,6 +30,7 @@ public partial class SettingsView : UserControl
         ModeRecycle.IsChecked = profile.Cleanup.Mode == "recycle";
         PinThisPcBox.IsChecked = profile.Layout.PinThisPcTopLeft;
         PinRecycleBox.IsChecked = profile.Layout.PinRecycleBinTopLeftSecond;
+        LoadAccentOptions();
         KeepDaysSlider.Value = profile.Cleanup.KeepDays;
         ArchiveRootBox.Text = profile.Cleanup.ArchiveRoot;
         CapSlider.Value = Math.Clamp(profile.Cleanup.ArchiveCapGB, 1, 20);
@@ -40,6 +44,72 @@ public partial class SettingsView : UserControl
 
         _loading = false;
     }
+
+    private void LoadAccentOptions()
+    {
+        AccentBox.Items.Clear();
+        AddAccentItem("自动（跟随壁纸）", null);
+        var selectedIndex = 0;
+        foreach (var color in WallpaperAccent.ExtractPalette())
+        {
+            AddAccentItem(Hex(color), color);
+        }
+
+        if (!string.IsNullOrWhiteSpace(App.Config.AccentColor))
+        {
+            var existing = AccentBox.Items.Cast<ComboBoxItem>()
+                .FirstOrDefault(i => i.Tag is Color c && Hex(c).Equals(App.Config.AccentColor, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+            {
+                selectedIndex = AccentBox.Items.IndexOf(existing);
+            }
+            else if (App.ParseHex(App.Config.AccentColor) is { } saved)
+            {
+                AddAccentItem(Hex(saved), saved);
+                selectedIndex = AccentBox.Items.Count - 1;
+            }
+        }
+
+        AccentBox.SelectedIndex = selectedIndex;
+    }
+
+    private void AddAccentItem(string label, Color? color)
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        panel.Children.Add(new Rectangle
+        {
+            Width = 22,
+            Height = 22,
+            Margin = new Thickness(0, 0, 10, 0),
+            Fill = color is { } c
+                ? new SolidColorBrush(c)
+                : new SolidColorBrush(Color.FromRgb(0x0F, 0x6C, 0xBD)),
+        });
+        panel.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center });
+        AccentBox.Items.Add(new ComboBoxItem { Content = panel, Tag = color });
+    }
+
+    private void OnAccentChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading || AccentBox.SelectedItem is not ComboBoxItem item)
+        {
+            return;
+        }
+
+        if (item.Tag is Color selected)
+        {
+            App.SetAccent(selected);
+            App.Config.AccentColor = Hex(selected);
+        }
+        else
+        {
+            var automatic = WallpaperAccent.Extract();
+            App.SetAccent(automatic);
+            App.Config.AccentColor = null;
+        }
+    }
+
+    private static string Hex(Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 
     private void OnKeepDaysChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
