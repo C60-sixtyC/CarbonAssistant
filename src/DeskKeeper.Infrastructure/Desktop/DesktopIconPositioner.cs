@@ -20,6 +20,7 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
     public bool TryMoveIcon(string path, string name, double x, double y, out string? error)
     {
         error = null;
+        using var folderView = DesktopFolderView.TryCreate();
         try
         {
             var listView = FindDesktopListView();
@@ -43,6 +44,12 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
                 }
 
                 var lParam = MakeLParam((int)x, (int)y);
+                if (folderView is not null && folderView.SetPosition(i, (int)x, (int)y))
+                {
+                    InvalidateRect(listView, IntPtr.Zero, true);
+                    return true;
+                }
+
                 var applied = SendMessage(listView, LvmSetItemPosition, new IntPtr(i), lParam).ToInt32();
                 if (applied == 0)
                 {
@@ -87,6 +94,7 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
     public bool TryReadPositions(out IReadOnlyList<IconPosition> positions)
     {
         positions = Array.Empty<IconPosition>();
+        using var folderView = DesktopFolderView.TryCreate();
         try
         {
             var listView = FindDesktopListView();
@@ -105,10 +113,16 @@ public sealed class DesktopIconPositioner : IDesktopIconPositioner
                     continue;
                 }
 
+                if (folderView is not null && folderView.GetPosition(i, out var x, out var y))
+                {
+                    result.Add(new IconPosition(name, x, y));
+                    continue;
+                }
+
                 var packed = SendMessage(listView, LvmGetItemPosition, new IntPtr(i), IntPtr.Zero).ToInt64();
-                var x = (short)(packed & 0xFFFF);
-                var y = (short)((packed >> 16) & 0xFFFF);
-                result.Add(new IconPosition(name, x, y));
+                var lx = (short)(packed & 0xFFFF);
+                var ly = (short)((packed >> 16) & 0xFFFF);
+                result.Add(new IconPosition(name, lx, ly));
             }
 
             positions = result;

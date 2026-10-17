@@ -1,8 +1,11 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using DeskKeeper.Application.Mapping;
+using DeskKeeper.Domain.Contracts;
 using DeskKeeper.Domain.Rules;
+using DeskKeeper.Infrastructure.Desktop;
 using DeskKeeper.Infrastructure.Storage;
 
 namespace DeskKeeper.App.Services;
@@ -85,6 +88,18 @@ public static class HeadlessRunner
             result.Moved,
             result.Failures,
             result.AbortReason,
+        }, JsonOptions);
+    }
+
+    public static string ReadIcons()
+    {
+        var positioner = new DesktopIconPositioner();
+        var ok = positioner.TryReadPositions(out var positions);
+        return JsonSerializer.Serialize(new
+        {
+            ok,
+            count = positions.Count,
+            items = positions.Select(p => new { p.Name, p.X, p.Y }),
         }, JsonOptions);
     }
 

@@ -71,6 +71,28 @@ public partial class HomeView : UserControl
         }
     }
 
+    private void OnUndoArrange(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var profile = AppServices.LoadProfile();
+            var (arrange, _) = AppServices.BuildUseCases();
+            var result = arrange.RestoreLastLayout(profile);
+            StatusText.Text = result.Aborted
+                ? $"回退失败：{result.AbortReason}"
+                : $"已回退 {result.Moved} 个图标"
+                  + (result.Failures.Count > 0 ? $"，{result.Failures.Count} 个未回退。" : "。");
+            if (Window.GetWindow(this) is MainWindow window)
+            {
+                window.ShowStatus(result.Aborted ? "回退未执行" : "已回退上次整理");
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"回退失败：{ex.Message}";
+        }
+    }
+
     private static string ZoneLabel(DeskKeeper.Domain.Rules.Zone zone) => zone switch
     {
         DeskKeeper.Domain.Rules.Zone.Apps => "软件",

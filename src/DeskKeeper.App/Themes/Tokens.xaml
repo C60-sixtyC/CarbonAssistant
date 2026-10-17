@@ -10,7 +10,7 @@
     <Color x:Key="TextPrimaryColor">#1B1B1B</Color>
     <Color x:Key="TextSecondaryColor">#5D5D5D</Color>
 
-    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource PrimaryColor}" />
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
@@ -57,7 +57,7 @@
                     <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8"
                             RenderTransformOrigin="0.5,0.5" ClipToBounds="True">
                         <Border.Effect>
-                            <DropShadowEffect x:Name="BtnShadow" BlurRadius="12" ShadowDepth="2" Opacity="0.18" />
+                            <DropShadowEffect x:Name="BtnShadow" BlurRadius="16" ShadowDepth="4" Opacity="0.22" />
                         </Border.Effect>
                         <Border.RenderTransform>
                             <ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1" />
@@ -87,7 +87,7 @@
                                             </DoubleAnimation.EasingFunction>
                                         </DoubleAnimation>
                                         <DoubleAnimation Storyboard.TargetName="BtnShadow"
-                                                         Storyboard.TargetProperty="Opacity" To="0.34"
+                                                         Storyboard.TargetProperty="Opacity" To="0.58"
                                                          Duration="0:0:0.16" />
                                     </Storyboard>
                                 </BeginStoryboard>
@@ -110,7 +110,7 @@
                                             </DoubleAnimation.EasingFunction>
                                         </DoubleAnimation>
                                         <DoubleAnimation Storyboard.TargetName="BtnShadow"
-                                                         Storyboard.TargetProperty="Opacity" To="0.18"
+                                                         Storyboard.TargetProperty="Opacity" To="0.22"
                                                          Duration="0:0:0.16" />
                                     </Storyboard>
                                 </BeginStoryboard>

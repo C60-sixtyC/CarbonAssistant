@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 using DeskKeeper.App.Services;
 using DeskKeeper.Infrastructure.Audit;
@@ -50,9 +51,19 @@ public partial class App : System.Windows.Application
         }
 
         Config = ConfigStore.Load();
+        ApplyWallpaperAccent();
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+    }
+
+    private void ApplyWallpaperAccent()
+    {
+        var accent = Services.WallpaperAccent.Extract();
+        if (accent is { } color)
+        {
+            Resources["PrimaryColor"] = color;
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -97,6 +108,10 @@ public partial class App : System.Windows.Application
             else if (args.Contains("--restore-layout", StringComparer.OrdinalIgnoreCase))
             {
                 summary = HeadlessRunner.RestoreLayout(profileId);
+            }
+            else if (args.Contains("--read-icons", StringComparer.OrdinalIgnoreCase))
+            {
+                summary = HeadlessRunner.ReadIcons();
             }
             else
             {
