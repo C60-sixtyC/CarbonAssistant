@@ -12,7 +12,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" Padding="24,14">
+        <Border Grid.Row="0" Background="{DynamicResource PrimaryBrush}" Padding="24,14">
             <DockPanel>
                 <TextBlock Text="讲台助手 · DeskKeeper" FontSize="24" FontWeight="Bold"
                            Foreground="White" VerticalAlignment="Center" />

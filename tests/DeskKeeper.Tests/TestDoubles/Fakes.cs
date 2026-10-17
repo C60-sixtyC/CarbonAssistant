@@ -50,6 +50,13 @@ public sealed class RecordingPositioner : IDesktopIconPositioner
         positions = PositionsToRead;
         return true;
     }
+
+    public bool TryGetViewArea(out double width, out double height)
+    {
+        width = 0;
+        height = 0;
+        return false;
+    }
 }
 
 public sealed class DictionaryRegistryReader : IRegistryReader

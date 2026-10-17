@@ -151,6 +151,13 @@ public sealed class ArrangeUseCase
         }
 
         var p = _layoutParameters.Get();
+        if (_positioner.TryGetViewArea(out var viewWidth, out var viewHeight)
+            && (Math.Abs(viewWidth - p.WorkAreaWidth) > 1 || Math.Abs(viewHeight - p.WorkAreaHeight) > 1))
+        {
+            warnings.Add(
+                $"已检测到显示参数差异（桌面图标视图 {viewWidth:F0}×{viewHeight:F0}），落位时会自动换算坐标。");
+        }
+
         var plan = LayoutEngine.Compute(
             zoneItems,
             p.WorkAreaWidth,
@@ -267,11 +274,11 @@ public sealed class ArrangeUseCase
 
         var failures = new List<string>();
         var moved = 0;
-        var p = _layoutParameters.Get();
+        var (viewW, viewH) = GetViewArea();
         foreach (var slot in preview.PlannedSlots)
         {
-            var x = p.WorkAreaLeft + slot.XPct / 100.0 * p.WorkAreaWidth;
-            var y = p.WorkAreaTop + slot.YPct / 100.0 * p.WorkAreaHeight;
+            var x = slot.XPct / 100.0 * viewW;
+            var y = slot.YPct / 100.0 * viewH;
             if (_positioner.TryMoveIcon(slot.Path, slot.Name, x, y, out var error))
             {
                 moved++;
@@ -308,11 +315,11 @@ public sealed class ArrangeUseCase
 
         var failures = new List<string>();
         var moved = 0;
-        var p = _layoutParameters.Get();
+        var (viewW, viewH) = GetViewArea();
         foreach (var item in rollback.Items)
         {
-            var x = p.WorkAreaLeft + item.XPct / 100.0 * p.WorkAreaWidth;
-            var y = p.WorkAreaTop + item.YPct / 100.0 * p.WorkAreaHeight;
+            var x = item.XPct / 100.0 * viewW;
+            var y = item.YPct / 100.0 * viewH;
             if (_positioner.TryMoveIcon(item.Path, item.Name, x, y, out var error))
             {
                 moved++;
@@ -433,6 +440,17 @@ public sealed class ArrangeUseCase
         null,
         false,
         "system");
+
+    private (double Width, double Height) GetViewArea()
+    {
+        if (_positioner.TryGetViewArea(out var width, out var height) && width > 0 && height > 0)
+        {
+            return (width, height);
+        }
+
+        var p = _layoutParameters.Get();
+        return (p.WorkAreaWidth, p.WorkAreaHeight);
+    }
 
     private static double ClampPct(double value) => Math.Clamp(value, 0, 100);
 }

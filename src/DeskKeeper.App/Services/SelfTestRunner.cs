@@ -254,6 +254,13 @@ public static class SelfTestRunner
             positions = Array.Empty<IconPosition>();
             return false;
         }
+
+        public bool TryGetViewArea(out double width, out double height)
+        {
+            width = 0;
+            height = 0;
+            return false;
+        }
     }
 }
 
