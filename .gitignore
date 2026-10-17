@@ -4,6 +4,7 @@ obj/
 .vs/
 TestResults/
 artifacts/
+release/
 *.user
 *.suo
 *.userosscache

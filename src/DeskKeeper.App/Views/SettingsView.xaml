@@ -31,6 +31,7 @@
                            Style="{StaticResource SecondaryText}" Margin="0,16,0,0" />
                 <TextBlock Text="删除操作优先归档或进回收站；配置损坏会自动回滚备份。适配说明：不与希沃/鸿合等厂商管家冲突。"
                            Style="{StaticResource SecondaryText}" />
+                <TextBlock x:Name="AboutVersionText" Style="{StaticResource SecondaryText}" Margin="0,8,0,0" />
             </StackPanel>
         </Border>
     </Grid>

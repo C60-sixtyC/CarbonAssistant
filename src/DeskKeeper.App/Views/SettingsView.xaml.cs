@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -12,6 +13,8 @@ public partial class SettingsView : UserControl
     public SettingsView()
     {
         InitializeComponent();
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        AboutVersionText.Text = $"版本 {version?.ToString(3) ?? "1.0.0"} · 离线可用 · 单文件发布";
         Loaded += (_, _) => LoadFromConfig();
     }
 

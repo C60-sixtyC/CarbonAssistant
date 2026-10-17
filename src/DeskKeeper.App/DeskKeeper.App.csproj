@@ -10,6 +10,13 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>讲台助手 DeskKeeper</Product>
+    <AssemblyTitle>讲台助手 DeskKeeper</AssemblyTitle>
+    <Description>教室多媒体大屏桌面整理与清理工具</Description>
+    <Authors>DeskKeeper</Authors>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DeskKeeper.Domain\DeskKeeper.Domain.csproj" />

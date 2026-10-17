@@ -34,14 +34,18 @@ tests/DeskKeeper.Tests         xUnit：52 个单元/集成测试（全部跑在�
 dotnet build DeskKeeper.sln -c Release
 dotnet test DeskKeeper.sln -c Release        # 52 个测试，不触碰真实桌面
 
-# 自包含单文件发布（离线机器直接运行）
-dotnet publish src/DeskKeeper.App/DeskKeeper.App.csproj -c Release -r win-x64 `
-  --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-  -o artifacts/win-x64
+# 一键生成可发布包（自包含单文件 + SHA256 + 自检 + zip）
+.\scripts\build-release.ps1 -Version 1.0.0 -Runtime win-x64
 
 # 内建自检（无 UI，临时目录跑清理→归档→撤销 / 排列→落位→快照）
-.\artifacts\win-x64\DeskKeeper.exe --selftest
+.\release\DeskKeeper-1.0.0-win-x64\DeskKeeper.exe --selftest
 ```
+
+发布产物位于 `release/`（已被 .gitignore 排除，不进入源码仓库）：
+
+- `release/DeskKeeper-1.0.0-win-x64/DeskKeeper.exe`：自包含单文件，目标机无需安装 .NET。
+- `release/DeskKeeper-1.0.0-win-x64.zip`：可直接下发的压缩包。
+- 同目录含 `README-zh.txt`、`VERSION.txt`、`SHA256SUMS.txt`。
 
 ## 运行与命令行
 
