@@ -1,0 +1,202 @@
+讲台助手（DeskKeeper）技术设计方案
+版本：v0.9（设计稿）　适用：教室多媒体大屏 · Windows 10/11 · 仅桌面作用域 · 无还原卡
+一、总体目标与技术约束
+1.1 设计目标
+在「单文件 exe + 托盘常驻 + 触控大屏 + 无后悔药（无冰点）」的约束下，实现桌面三分区布局引擎与课后清理归档模块，要求：零误删可追溯、15 秒内完成下课清理、配置重启不丢、内存 < 100MB、离线可用。
+1.2 硬约束（不可违背）
+表格
+编号	约束	技术含义
+C1	仅操作桌面目录（用户桌面 + Public Desktop）	枚举器作用域锁死，禁止任何全盘递归入口
+C2	无冰点/还原卡，状态持久	所有破坏性操作必须可回滚或可归档；日志需轮转防无限增长
+C3	触摸为主、强光环境、两米外可读	UI 触控尺寸 / 浅色实心主题 / 大字号，禁用毛玻璃依赖
+C4	公共账号、人人可写	配置文件与日志目录需 ACL 加固 + 自校验防篡改
+C5	单文件 exe、离线环境	运行时自包含或退回到 Framework 4.8；零在线依赖
+C6	管理员权限与日常使用分离	托盘程序以用户权限运行，提权操作走 Shell API 自然提权或独立 helper
+二、技术选型
+2.1 核心栈
+框架：WPF（.NET 8，win-x64 自包含单文件发布）；若校内镜像确认仅有 .NET Framework 4.8，则降级为 net472 + 原生 WPF（牺牲 Fluent 控件库）。
+UI 层：WPF-UI（NuGet，Fluent 风格）+ 自定义 Token 字典；备选纯原生模板（退路 A）。
+MVVM：CommunityToolkit.Mvvm（轻量，不用 Prism）。
+数据：JSON 配置（System.Text.Json，含 .bak 双写）+ SQLite 暂不引入（无冰点且仅桌面，每次启动枚举成本 < 50ms，索引服务推迟至 v0.4+ 按需评估）。
+系统交互：P/Invoke + COM（IFileOperation / IShellLink），不依赖第三方 Native 库。
+打包：Inno Setup（支持安装时选择配置/归档目录）。
+签名：代码签名证书 + 信息中心加白（SmartScreen 拦截为首要部署风险）。
+2.2 不选的理由（简述）
+WinUI 3（runtime 依赖重、unpackaged 限制多）、Electron/Tauri（内存与 Shell 互操成本）、Avalonia（跨平台无用武之地）、常驻索引服务（过度设计）。
+三、系统架构
+3.1 分层
+文本
+
+编辑
+
+
+
+┌─────────────────────────────────────────────┐
+│  Presentation  (WPF Views / ViewModels)     │  首页双卡片 / 清单页 / 设置页 / 托盘
+├─────────────────────────────────────────────┤
+│  Application   (UseCases: Arrange / Scan / Clean / Restore) │ 事务编排、dry-run、undo log
+├─────────────────────────────────────────────┤
+│  Domain        (RuleEngine / Classifier / LayoutEngine)     │ 纯逻辑，无 UI 无 IO 副作用
+├─────────────────────────────────────────────┤
+│  Infrastructure (Win32 / Shell COM / FileSystem / AuditLog) │ P/Invoke、COM、ACL、日志
+├─────────────────────────────────────────────┤
+│  Config        (JSON + .bak + 版本迁移)                      │ %LocalAppData%\DeskKeeper\
+└─────────────────────────────────────────────┘
+边界纪律：Domain 层不得引用 System.Windows、不得访问磁盘；所有副作用经 Infrastructure 接口注入。此举便于对布局算法进行单元测试（无需桌面环境）。
+3.2 进程与生命周期
+单实例：命名 Mutex（Global\DeskKeeperSingleInstance）+ 二次启动时激活主窗口。
+启动链路：App.OnStartup → 兜底解锁扫描（防 ACL 残留）→ 脏快照回滚检查 → 加载配置 → 托盘图标 → 延迟 30s 首次扫描（等网盘同步）。
+触发源：托盘打开 / 登录计划任务 / 注销计划任务 / 命令行静默参数 / 定时软触发（每小时，仅全屏应用未运行时提示，不静默覆盖）。
+退出：确保审计日志 flush、快照落盘；异常退出依靠 .bak 下次启动回滚。
+四、核心模块设计
+4.1 桌面枚举器 DesktopEnumerator
+职责：产出规范化的桌面项清单，屏蔽系统与虚拟项。
+csharp
+
+编辑
+
+
+
+record DesktopItem(
+    string Name,              // 显示名
+    string FullPath,          // 真实路径（Public Desktop 需标注）
+    DesktopItemKind Kind,     // AppLink / Folder / File / SystemIcon / Unknown
+    long SizeBytes,
+    DateTime CreatedTime,
+    DateTime ModifiedTime,
+    DateTime AccessedTime,    // 标记为 Unreliable 若探测失败
+    bool IsPinned,            // 用户手动摆放过
+    bool IsReadOnly,          // Public Desktop / 权限不足
+    string? LinkTargetExe,    // 仅 AppLink
+    bool IsOneDriveManaged    // 桌面被 OneDrive 接管 → 高危拦截
+);
+关键实现点：
+路径获取统一走 SHGetKnownFolderPath(FOLDERID_Desktop / FOLDERID_PublicDesktop)，禁止硬编码 %UserProfile%\Desktop。
+系统图标识别：解析 desktop.ini 中的 CLSID / .{...} 命名项，命中则标记 SystemIcon 并跳过一切移动与删除。
+应用程序判定：.lnk / .url / .appref-ms 经 IShellLink.GetPath 解析目标，目标为 .exe 或含 AppUserModelID 即视为应用；直连 .exe 亦纳入。
+OneDrive 接管检测：桌面路径含 OneDrive 子串即置 IsOneDriveManaged = true，清理动作整体拦截并弹窗告知。
+性能预算：500 项 ≤ 1.5s；异步 + TaskCreationOptions.RunContinuationsAsynchronously，UI 先出骨架屏。
+4.2 分类器与规则引擎 RuleEngine
+规则数据结构（优先级队列，从上到下首次匹配胜出）：
+json
+
+编辑
+
+
+
+{
+  "schemaVersion": 1,
+  "profiles": {
+    "classroom": {
+      "name": "教室模式",
+      "rules": [
+        {"order": 100, "match": {"kind": "AppLink"},          "action": {"zone": "apps",   "pin": false}},
+        {"order": 200, "match": {"kind": "Folder"},          "action": {"zone": "folders"}},
+        {"order": 300, "match": {"ext": ["*.lnk"]},          "action": {"exclude": true, "scope": "permanent"}},
+        {"order": 400, "match": {"nameGlob": "*课表*"},      "action": {"exclude": true, "scope": "permanent"}},
+        {"order": 500, "match": {"ext": ["*.tmp","*.crdownload"], "sizeMaxKB": 1024},
+         "action": {"disposal": "recycle"}},
+        {"order": 9000, "match": {},                          "action": {"zone": "files"}}
+      ],
+      "layout": {"zoneRatio": [2, 2.5, 5.5], "minSlotsPerZone": 4},
+      "cleanup": {"mode": "archive", "keepDays": 30, "archiveRoot": "D:\\讲台归档", "archiveCapGB": 5}
+    }
+  }
+}
+匹配器组合：kind / ext（glob）/ nameGlob / nameRegex / sizeMinKB~`sizeMaxKB / modifiedOlderThanDays / accessedOlderThanDays / pathContains。 动作：zone: apps|folders|files、exclude、disposal: archive|recycle|skip、pin、confirmRequired`（受保护类型强制二次确认）。
+双层排除：清单页勾选 = 本次临时豁免；点击「以后不再提示此类」→ 反向生成一条 exclude 规则写入配置（按扩展名/精确名/glob 三选一）。这是降低老师重复操作成本的核心机制。
+时间判据双模式：
+Modified（默认，数据永远可信）；
+Accessed（启用前必须探测：创建测试文件 → 读取 → 写入 → 再读取，若值未变化则灰掉该选项并提示「本机未启用最后访问时间」）。
+排序：调用 Shlwapi.StrCmpLogicalW（资源管理器同款自然序），避免手写字符串比较导致中文顺序违和。
+4.3 布局引擎 LayoutEngine（纯函数）
+输入：IEnumerable<DesktopItem> + 分区规则 + 工作区尺寸 + 网格单元 → 输出：Dictionary<FullPath, Point>。
+步骤：
+取工作区：SystemParametersInfo(SPI_GETWORKAREA)；网格单元：SPI_GETICONSPACING。进程须声明 PerMonitorV2 DPI 感知，否则返回虚拟化数值。
+计算行列数 cols = workArea.Width / cellW，rows = workArea.Height / cellH。
+按 zoneRatio 切分三列宽；校验 每列槽位 ≥ minSlotsPerZone，不满足则降级为两列（apps+folders 合并）。
+各区内按 StrCmpLogicalW 排序后自上而下、自左而右填充；区顶预留一行标题位（文字标签仅作视觉，非实体）。
+坐标存百分比（xPct, yPct），恢复时按当前分辨率重算；分辨率跨度超阈值（如宽度变化 > 40%）时降级为「只保分区顺序，不保绝对位置」。
+增量应用：与本地快照 diff，IsPinned == true 或快照中已存在且位置未被用户改动者保持不动，仅对新项落位。
+执行前置写 .bak 快照（原位置全量），失败时下次启动自动回滚。
+外部干扰防护：检测「查看 → 自动排列图标」是否开启（读 Bags 注册表或试探性移动），若开启则提示手动关闭，不强行改写系统设置。Public Desktop 内的项不计入布局分母（无权移动，否则右区留空块）。
+4.4 清理与归档编排 CleanupOrchestrator（事务式）
+文本
+
+编辑
+
+
+
+PreCheck() → BuildManifest(dry-run) → UserConfirm → Execute() → Audit()
+PreCheck 必做四项（缺一不可）：
+NukeOnDelete 探测：HKCU\...\Explorer\BitBucket\NukeOnDelete == 1 → 醒目警告「本机关闭了回收站，所有删除将永久生效」，并建议取消清理动作。
+回收站容量预检：SHQueryRecycleBin 取当前占用 + 各卷 BitBucket\Volume\{GUID}\MaxCapacity 推算上限，若本次待删体积超出剩余容量 → 提示部分文件将永久删除。
+可移动磁盘 / UNC 路径识别：此类目标无回收站，降级为「仅归档」或直接跳过。
+占用文件探测：尝试 File.OpenRead 失败的项标记为「跳过」，绝不强杀进程（防止误删正在投影的课件）。
+执行策略：
+归档优先：IFileOperation.Move（同卷）/ 复制+校验+删源（跨卷），按 D:\讲台归档\yyyy-MM-dd_第N次清理\ 分目录；归档根目录设容量上限，超限时自动清理最早批次。
+回收站为辅：IFileOperation.Delete（FOF_ALLOWUNDO 语义），逐文件提交，单项失败隔离不影响其余；失败项单独列表。
+永久删除（不进回收站）仅限白名单类型：*.tmp、Thumbs.db、浏览器缓存、回收站本身。
+撤销能力：记录 原路径 ↔ 归档路径/删除时间 ↔ 大小，提供「还原上一次清理」（v0.3：从回收站按删除时间定位；归档模式直接反向 Move）。
+4.5 审计与日志 AuditLogger
+json
+
+编辑
+
+
+
+{"ts":"2026-10-17T16:42:03+08:00","host":"CLS-3F-07","userSid":"S-1-5-...","profile":"classroom",
+ "action":"cleanup","dryRun":false,"itemsDeleted":8,"bytesArchived":134217728,"failures":[...],
+ "configHash":"a1b2c3...","manifestHash":"d4e5f6..."}
+原则：只存元数据，绝不存文件内容；本地保留 90 天或 50MB 轮转截断；可选追加到 UNC 共享目录供信息中心用 Excel 查阅；每条记录带配置哈希以便追溯规则版本。
+五、配置与持久化
+位置：%LocalAppData%\DeskKeeper\config.json（无冰点，故无需特殊处理还原分区；安装时仍允许用户改到 D 盘或共享目录）。
+双写安全：写前复制为 config.json.bak，新文件落盘成功后再替换；启动时校验 JSON schema，损坏则回滚并提示。
+版本迁移：schemaVersion 字段 + 迁移器链，保证后续升级不丢用户的排除规则（这是最宝贵的资产）。
+权限加固：配置目录对 Users 组设为「读 + 写_own_file」，排除规则文件额外设只读属性，防学生篡改保游戏。
+命令行：--apply --profile classroom --dry-run --no-ui --log \\server\log\%COMPUTERNAME%.json，供 GPO 计划任务在登录/注销时调用。
+六、UI 层技术要点
+DPI：app.manifest 声明 PerMonitorV2；XAML 尺寸用 px 但按 150%~200% 大屏实测校准。
+Token 化：Tokens.xaml 统一定义色板（#0F6CBD 主色 / #D13438 危险）、字号（标题 28~32、正文 18、辅助 14）、间距（8 倍数）、圆角（8）；全站 DynamicResource 引用，便于考试模式一键灰阶禁用。
+触控规格：主按钮 ≥ 88px 高、列表行高 48、复选框热区 44×44、图标 32px；Stylus.IsPressAndHoldEnabled="False" 关闭长按=右键；焦点视觉改为粗边框。
+主题：默认浅色锁定（强光可读），Mica 仅在 Win11 生效且不作为可读性依赖，Win10 降级纯色底。
+三个自研控件：虚拟化大行高清单表（首列固定复选框 + 徽章列）、规则优先级拖拽列表（拖拽插入线 + 松手即持久化）、布局沙盘预览（缩略方块渲染三分区结果，确认后执行）。
+动画克制：150~200ms 淡入位移；尊重系统「关闭动画」设置。
+页面：仅三页——首页双卡片（上课整理 / 下课清理）+ 状态横幅、清理清单页（底部悬浮操作栏，取消键设为默认焦点防误触）、设置页。
+七、部署与运维
+Runtime 决策先行：先核查校内镜像 runtime 状况，再定 .NET 8 自包含（包体 70~90MB）还是 net472（3~5MB 但弃用 Fluent 库）。
+Inno Setup 安装包：安装时让用户指定「配置与归档目录」，并明确提示「若有还原卡请选 D 盘或服务器共享」。
+GPO 计划任务：登录时延时 30s 跑 --apply，注销时跑清理（教师完全无感，是最优雅的触发点）。
+不与希沃/鸿合管家冲突：不清理厂商目录，不自启抢占；关于页写明适配说明。
+性能与稳定性：内存 < 100MB；扫描走后台低优先级线程；绝不在上课期间做重量级扫描。
+更新：离线包 + U 盘/共享下发，不自带在线升级模块。
+八、测试策略
+表格
+类型	内容
+单元测试	RuleEngine 匹配优先级、StrCmpLogicalW 中文序、LayoutEngine 坐标计算与降级逻辑、配置迁移器
+集成测试	500 项桌面枚举性能、跨卷归档完整性（含哈希校验）、回收站满/NukeOnDelete/只读项/长路径/特殊字符文件名
+兼容矩阵	Win10 1809+ / Win11、1080p / 4K、DPI 100%/150%/200%、多显示器、任务栏自动隐藏两种状态
+破坏性测试	执行中途杀进程 → 验证 .bak 回滚；断电模拟；配置被篡改 → 降级默认值
+实地试点	3 个讲台 × 2 周，只观察不解释；建立「误报样本库」反哺规则模板；验收指标：15 秒内完成清理、一周零误删、重启配置不丢
+九、风险清单与应对
+表格
+风险	等级	应对
+误删课件（无冰点，不可逆）	高	归档代替删除 + 回收站容量/NukeOnDelete 预检 + 默认 dry-run + 前三次强制二次确认 + 受保护类型二次弹窗 + 撤销还原
+OneDrive 桌面托管导致云端文件被删	高	路径检测整体拦截
+NukeOnDelete 使「进回收站」承诺失效	高	启动即探测并警告
+LastAccessTime 不可信导致误判	中	默认改用 ModifiedTime，Accessed 需探测后才开放
+DPI/分辨率导致布局错乱	中	PerMonitorV2 + 百分比坐标 + 降级策略
+SmartScreen/杀软拦截	中	代码签名 + 信息中心加白
+功能蔓延变成「优化流氓软件」	中	遵守不做清单（见下）
+老师不信任、装完就卸	中	沙盘预览 + 状态横幅 + 人情味文案 + 试点共创
+不做清单（v1.0）：全盘扫描、微信/QQ 缓存清理、注册表清理、内存加速、开机优化、浏览器主页锁定、广告拦截、与其他管家对比、手机端/服务端、多语言。
+十、迭代路线
+v0.1：触控面板 + 三分区布局引擎 + 快照增量还原 + 沙盘预览（只做这一件事上讲台试）
+v0.2：桌面扫描清单 + 双层排除规则 + 归档优先 + 回收站四项预检 + 逐文件隔离执行 + 审计日志
+v0.3：时间判据双模式 + 「保留最近 N 天」滑块 + 还原上一次清理 + 日志轮转
+v0.4：登录/注销自动触发 + 命令行静默 + GPO 批量下发 + 崩溃快照自愈 + （可选）常驻索引服务评估
+十一、下一步可交付物
+本方案已明确接口契约与数据结构，可直接进入编码阶段。建议优先实现以下两项之一：
+Infrastructure 层骨架：DesktopEnumerator + IFileOperation 封装 + 回收站四项预检（含 NukeOnDelete/容量/占用探测）+ 归档事务编排 + 审计日志 —— 风险最高、最容易踩坑的部分。
+LayoutEngine + 规则引擎：纯函数实现，附带单元测试与 JSON 配置 schema，可脱离真机先行验证正确性。
+若需推进，可提供大屏的实际分辨率、DPI 缩放比例及 Windows 版本，以便将网格单元、按钮尺寸、字号等参数计算为确切的像素值，避免 1080p 大屏出现按钮溢出问题。
