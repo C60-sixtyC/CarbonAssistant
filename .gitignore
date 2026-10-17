@@ -1,0 +1,11 @@
+bin/
+obj/
+.nuget/
+.vs/
+TestResults/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>DeskKeeper.App</RootNamespace>
+    <AssemblyName>DeskKeeper</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DeskKeeper.Domain\DeskKeeper.Domain.csproj" />
+    <ProjectReference Include="..\DeskKeeper.Infrastructure\DeskKeeper.Infrastructure.csproj" />
+    <ProjectReference Include="..\DeskKeeper.Application\DeskKeeper.Application.csproj" />
+  </ItemGroup>
+</Project>
+

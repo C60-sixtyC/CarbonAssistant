@@ -1,0 +1,33 @@
+<UserControl x:Class="DeskKeeper.App.Views.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <UniformGrid Columns="2">
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="上课 · 整理桌面" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
+                    <TextBlock Text="把应用程序、文件夹、文件自动归入三列，图标各就各位，开讲就是清爽。" Style="{StaticResource BodyText}" Margin="0,0,0,20" />
+                    <Button Content="开始整理" Style="{StaticResource BigButton}" HorizontalAlignment="Left" Click="OnArrange" />
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="下课 · 一键清理" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
+                    <TextBlock Text="课后残留课件与临时文件归档或进回收站，帮你收好，不弄丢。" Style="{StaticResource BodyText}" Margin="0,0,0,20" />
+                    <Button Content="打开清理清单" Style="{StaticResource BigButton}" HorizontalAlignment="Left" Click="OnClean" />
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,0">
+            <StackPanel>
+                <TextBlock Text="操作状态" Style="{StaticResource CardTitleText}" Margin="0,0,0,8" />
+                <TextBlock x:Name="StatusText" Text="还没有执行过操作。整理前会先做沙盘预览，确认后才落位；清理默认归档，绝不静默删除。" Style="{StaticResource BodyText}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
+

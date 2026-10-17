@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>DeskKeeper.Application</RootNamespace>
+    <AssemblyName>DeskKeeper.Application</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DeskKeeper.Domain\DeskKeeper.Domain.csproj" />
+    <ProjectReference Include="..\DeskKeeper.Infrastructure\DeskKeeper.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
+

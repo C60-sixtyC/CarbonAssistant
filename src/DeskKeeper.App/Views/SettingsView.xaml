@@ -1,0 +1,38 @@
+<UserControl x:Class="DeskKeeper.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+        <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+            <StackPanel>
+                <TextBlock Text="清理策略" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
+                <RadioButton x:Name="ModeArchive" Content="归档到指定目录（推荐）" GroupName="Mode" Checked="OnModeChanged" />
+                <RadioButton x:Name="ModeRecycle" Content="移入回收站" GroupName="Mode" Checked="OnModeChanged" />
+                <TextBlock x:Name="KeepDaysLabel" Style="{StaticResource BodyText}" Margin="0,12,0,4" />
+                <Slider x:Name="KeepDaysSlider" Minimum="1" Maximum="90" TickFrequency="1" IsSnapToTickEnabled="True"
+                        ValueChanged="OnKeepDaysChanged" />
+                <TextBlock Text="归档目录" Style="{StaticResource BodyText}" Margin="0,12,0,4" />
+                <TextBox x:Name="ArchiveRootBox" />
+                <TextBlock x:Name="CapLabel" Style="{StaticResource BodyText}" Margin="0,12,0,4" />
+                <Slider x:Name="CapSlider" Minimum="1" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True"
+                        ValueChanged="OnCapChanged" />
+                <Button Content="保存设置" Style="{StaticResource BigButton}" Margin="0,20,0,0" HorizontalAlignment="Left" Click="OnSave" />
+                <TextBlock x:Name="SaveResult" Style="{StaticResource SecondaryText}" Margin="0,8,0,0" />
+            </StackPanel>
+        </Border>
+        <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+            <StackPanel>
+                <TextBlock Text="排除与保护规则（自上而下，首次匹配胜出）" Style="{StaticResource CardTitleText}" Margin="0,0,0,12" />
+                <ListBox x:Name="RuleList" FontFamily="Consolas, Microsoft YaHei UI" FontSize="15" />
+                <TextBlock Text="免责声明：本工具仅处理桌面及指定目录，只读取文件元数据，不读取内容；"
+                           Style="{StaticResource SecondaryText}" Margin="0,16,0,0" />
+                <TextBlock Text="删除操作优先归档或进回收站；配置损坏会自动回滚备份。适配说明：不与希沃/鸿合等厂商管家冲突。"
+                           Style="{StaticResource SecondaryText}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
+
